@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>เล่น — DAB DETECTOR</title>
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+  <div class="container">
+    <h1 style="font-size:1.5rem">DAB <span class="accent">DETECTOR</span></h1>
+
+    <!-- ═══ สถานะ 1: ก่อนขอกล้อง — ข้อความความเป็นส่วนตัวต้องเห็นก่อนกด ═══ -->
+    <section id="s-consent">
+      <div class="privacy-note">
+        🔒 ภาพจากกล้องประมวลผลบนเครื่องของคุณทั้งหมด<br />
+        <strong>ไม่มีการบันทึกหรือส่งวิดีโอออกจากเครื่องเด็ดขาด</strong>
+      </div>
+      <p class="notice" id="mobile-hint" style="display:none">
+        📱 วางมือถือพิงอะไรสักอย่าง แล้วถอยห่างประมาณ 2 เมตร ให้เห็นตัวครึ่งบนขึ้นไป
+      </p>
+      <p style="margin:18px 0">
+        <button class="btn btn-primary" id="btn-start-camera">เปิดกล้อง</button>
+      </p>
+      <p><a class="btn btn-secondary" href="../index.html">กลับหน้าแรก</a></p>
+    </section>
+
+    <!-- ═══ สถานะ 2: กำลังโหลด ═══ -->
+    <section id="s-loading" class="hidden">
+      <div class="spinner"></div>
+      <p id="loading-msg">กำลังโหลดโมเดล AI (ครั้งแรกอาจใช้ 2-5 วินาที)…</p>
+    </section>
+
+    <!-- ═══ สถานะ 3: กล้องใช้ไม่ได้ — ห้ามจอขาว (Edge Case 1, 2) ═══ -->
+    <section id="s-error" class="hidden">
+      <div class="card error-box">
+        <h2 id="err-title">เปิดกล้องไม่ได้</h2>
+        <p id="err-detail"></p>
+        <ol id="err-steps"></ol>
+        <p style="margin-top:12px">
+          <button class="btn btn-primary" id="btn-retry">ลองใหม่</button>
+          <a class="btn btn-secondary" href="leaderboard.html">ดูอันดับอย่างเดียว</a>
+        </p>
+      </div>
+    </section>
+
+    <!-- ═══ สถานะ 4: กล้องทำงาน — โครงกระดูก + ตรวจ Dab สด ═══ -->
+    <section id="s-play" class="hidden">
+      <div class="stage">
+        <video id="video" playsinline muted autoplay></video>
+        <canvas id="canvas"></canvas>
+
+        <div class="overlay top">
+          <span class="badge" id="status-badge">ยืนให้เห็นตัวครึ่งบนในเฟรม</span>
+        </div>
+        <div class="overlay bottom">
+          <span class="live-score" id="live-score">0</span>
+        </div>
+
+        <!-- Debug Panel — ค่าจริงสำหรับจูนเกณฑ์ใน config.js (Phase 3) -->
+        <div class="debug-panel" id="debug-panel">
+          <h4>DEBUG</h4>
+          <div id="dbg-body">รอ landmark…</div>
+          <button id="btn-save-pose" style="margin-top:6px;font-size:0.7rem">💾 บันทึกท่านี้เป็น JSON</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <p>นับได้ <strong id="dab-count" style="color:var(--accent);font-size:1.6rem">0</strong> ครั้ง</p>
+        <p class="notice">ทำท่า Dab แล้วกลับท่ายืนปกติ ถึงจะนับครั้งต่อไป</p>
+      </div>
+      <p><a class="btn btn-secondary" href="../index.html" id="btn-quit">ออก</a></p>
+    </section>
+  </div>
+
+  <script type="module">
+    import { CFG } from "../js/config.js";
+    import { preloadModel, startCamera, stopCamera, startDetectLoop, drawSkeleton } from "../js/pose.js";
+    import { scoreDab, createSmoother, createDabCounter, LM, angle, dist } from "../js/dab.js";
+
+    const $ = (id) => document.getElementById(id);
+    const sections = ["s-consent", "s-loading", "s-error", "s-play"];
+    const show = (id) => sections.forEach((s) => $(s).classList.toggle("hidden", s !== id));
+
+    const isMobile = /Mobi|Android|iPhone/i.test(navigator.userAgent);
+    if (isMobile) $("mobile-hint").style.display = "block";
+
+    const video = $("video");
+    const canvas = $("canvas");
+    let stopLoop = null;
+    let lastLandmarks = null;
+
+    // ── แปลง error ของ getUserMedia เป็นข้อความที่คนทั่วไปเข้าใจ ──
+    const ERROR_TEXT = {
+      NotAllowedError: {
+        title: "คุณยังไม่ได้อนุญาตให้ใช้กล้อง",
+        detail: "เกมนี้จำเป็นต้องใช้กล้องเพื่อตรวจจับท่าทาง (ภาพไม่ถูกส่งออกจากเครื่อง)",
+        steps: ["กดไอคอน 🔒 หรือ 🎥 ข้างช่อง URL", "เปลี่ยนสิทธิ์กล้องเป็น \"อนุญาต\"", "กดปุ่มลองใหม่ด้านล่าง"],
+      },
+      NotFoundError: {
+        title: "ไม่พบกล้องในเครื่องนี้",
+        detail: "เครื่องนี้อาจไม่มีกล้อง หรือกล้องถูกปิดการใช้งานอยู่",
+        steps: ["ตรวจว่ากล้องเสียบ/เปิดอยู่", "ลองเปิดจากมือถือหรือเครื่องที่มีกล้องแทน"],
+      },
+      NotReadableError: {
+        title: "กล้องถูกโปรแกรมอื่นใช้งานอยู่",
+        detail: "มีแอปอื่น (เช่น Zoom, Meet) กำลังใช้กล้องอยู่",
+        steps: ["ปิดโปรแกรมที่ใช้กล้องอยู่", "กดปุ่มลองใหม่"],
+      },
+    };
+    function showError(err) {
+      const t = ERROR_TEXT[err.name] ?? {
+        title: "เกิดข้อผิดพลาด", detail: String(err.message ?? err), steps: ["กดปุ่มลองใหม่"],
+      };
+      $("err-title").textContent = t.title;
+      $("err-detail").textContent = t.detail;
+      $("err-steps").innerHTML = t.steps.map((s) => `<li>${s}</li>`).join("");
+      show("s-error");
+    }
+
+    // ── เริ่มกล้อง + โมเดล (เรียกหลังกดปุ่มเท่านั้น) ──
+    async function boot() {
+      show("s-loading");
+      try {
+        $("loading-msg").textContent = "กำลังโหลดโมเดล AI…";
+        const { delegate } = await preloadModel();
+        $("loading-msg").textContent = "กำลังเปิดกล้อง…";
+        await startCamera(video);
+        // canvas ต้องเท่าขนาดวิดีโอจริง ไม่ใช่ขนาด CSS ไม่งั้นโครงกระดูกเบี้ยว
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        show("s-play");
+        if (delegate === "CPU") {
+          $("status-badge").textContent = "โหมดประหยัด (CPU)";
+        }
+        runDetection();
+      } catch (err) {
+        showError(err);
+      }
+    }
+    $("btn-start-camera").addEventListener("click", boot);
+    $("btn-retry").addEventListener("click", boot);
+    $("btn-quit").addEventListener("click", () => stop());
+    window.addEventListener("pagehide", () => stop());
+    function stop() { stopLoop?.(); stopCamera(video); }
+
+    // ── ลูปตรวจจับ + ให้คะแนน + นับครั้ง ──
+    function runDetection() {
+      const smooth = createSmoother();
+      const counter = createDabCounter();
+
+      stopLoop = startDetectLoop(video, (lm, fps) => {
+        lastLandmarks = lm;
+        if (!lm) {
+          drawSkeleton(canvas, null);
+          $("status-badge").textContent = "ไม่เห็นตัวคุณ — ขยับให้อยู่ในเฟรม";
+          $("status-badge").className = "badge warn";
+          return;
+        }
+
+        const result = scoreDab(lm);
+        const smoothed = smooth(result.valid ? result.total : 0);
+
+        drawSkeleton(canvas, lm, smoothed);
+        $("live-score").textContent = Math.round(smoothed);
+
+        const { count } = counter.update(smoothed);
+        $("dab-count").textContent = count;
+
+        if (!result.valid) {
+          $("status-badge").textContent = "ขยับให้เห็นตัวมากขึ้น / เพิ่มแสง";
+          $("status-badge").className = "badge warn";
+        } else if (smoothed >= CFG.DAB_ENTER) {
+          $("status-badge").textContent = "DAB! 🔥";
+          $("status-badge").className = "badge ok";
+        } else {
+          $("status-badge").textContent = "พร้อม — ทำท่า Dab เลย!";
+          $("status-badge").className = "badge";
+        }
+
+        updateDebug(lm, result, fps);
+      });
+    }
+
+    // ── Debug Panel: ค่าจริงที่ใช้จูน config.js ──
+    function updateDebug(lm, result, fps) {
+      const sw = dist(lm[LM.L_SHOULDER], lm[LM.R_SHOULDER]);
+      const elbowL = angle(lm[LM.L_SHOULDER], lm[LM.L_ELBOW], lm[LM.L_WRIST]);
+      const elbowR = angle(lm[LM.R_SHOULDER], lm[LM.R_ELBOW], lm[LM.R_WRIST]);
+      const noseL = dist(lm[LM.L_WRIST], lm[LM.NOSE]) / sw;
+      const noseR = dist(lm[LM.R_WRIST], lm[LM.NOSE]) / sw;
+      const p = result.parts;
+      $("dbg-body").innerHTML = [
+        `ศอก L: ${elbowL.toFixed(0)}°  R: ${elbowR.toFixed(0)}°`,
+        `มือ-จมูก/ไหล่ L: ${noseL.toFixed(2)}  R: ${noseR.toFixed(2)}`,
+        p ? `str:${(p.straight*100).toFixed(0)} rai:${(p.raised*100).toFixed(0)} ben:${(p.bend*100).toFixed(0)}` : "-",
+        p ? `tuc:${(p.tuck*100).toFixed(0)} ali:${(p.align*100).toFixed(0)} side:${result.side ?? "-"}` : "-",
+        `fps: ${fps}`,
+      ].join("<br/>");
+    }
+
+    // ── ปุ่มบันทึก landmark เป็น JSON — เก็บไว้ทดสอบสูตรโดยไม่ต้องเปิดกล้อง ──
+    $("btn-save-pose").addEventListener("click", () => {
+      if (!lastLandmarks) return alert("ยังไม่มี landmark");
+      const data = JSON.stringify(
+        lastLandmarks.map(({ x, y, z, visibility }) => ({ x, y, z, visibility }))
+      );
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([data], { type: "application/json" }));
+      a.download = `pose-${Date.now()}.json`;
+      a.click();
+    });
+  </script>
+</body>
+</html>

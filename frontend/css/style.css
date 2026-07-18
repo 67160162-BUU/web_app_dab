@@ -1,0 +1,156 @@
+/* ธีมหลัก DAB DETECTOR — มืดแบบเกม เน้นปุ่มเดียวใหญ่ๆ */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #12121c;
+  --card: #1d1d2e;
+  --accent: #ffd60a;
+  --accent2: #06d6a0;
+  --danger: #ef476f;
+  --text: #f1f1f6;
+  --muted: #9a9ab0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Segoe UI", "Prompt", system-ui, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.container { width: 100%; max-width: 560px; padding: 24px 16px; text-align: center; }
+
+h1 { font-size: 2.4rem; letter-spacing: 2px; }
+h1 .accent { color: var(--accent); }
+.tagline { color: var(--muted); margin: 8px 0 20px; }
+
+.card {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 20px;
+  margin: 14px 0;
+}
+
+/* ปุ่ม */
+.btn {
+  display: inline-block;
+  border: none;
+  border-radius: 999px;
+  padding: 16px 42px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 0.1s;
+}
+.btn:active { transform: scale(0.96); }
+.btn-primary { background: var(--accent); color: #1a1a00; }
+.btn-secondary { background: transparent; color: var(--muted); border: 1px solid var(--muted); font-size: 1rem; padding: 10px 24px; }
+.btn:disabled { opacity: 0.5; cursor: wait; }
+
+/* ข้อความความเป็นส่วนตัว — ต้องเห็นก่อนกดปุ่มเปิดกล้อง */
+.privacy-note {
+  background: rgba(6, 214, 160, 0.12);
+  border: 1px solid var(--accent2);
+  color: var(--accent2);
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 0.9rem;
+  margin: 14px 0;
+}
+.notice { color: var(--muted); font-size: 0.85rem; }
+
+/* กล้อง + canvas ทับกัน และ mirror ทั้งคู่ */
+.stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: #000;
+  border-radius: 16px;
+  overflow: hidden;
+}
+.stage video, .stage canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);   /* ภาพกระจก — จำไว้ว่า left ของ MediaPipe อยู่ขวาจอ */
+}
+.stage canvas { z-index: 2; }
+
+/* ป้ายสถานะ / คะแนนสด ทับบนวิดีโอ */
+.overlay {
+  position: absolute;
+  z-index: 3;
+  left: 0; right: 0;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+.overlay.top { top: 10px; }
+.overlay.bottom { bottom: 10px; }
+.badge {
+  background: rgba(0, 0, 0, 0.65);
+  border-radius: 999px;
+  padding: 8px 18px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+.badge.ok { color: var(--accent2); }
+.badge.warn { color: var(--accent); }
+
+.live-score {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--accent);
+  text-shadow: 0 2px 8px #000;
+}
+
+/* Debug Panel — ใช้ตอนจูนค่า (Phase 3) */
+.debug-panel {
+  position: absolute;
+  z-index: 4;
+  top: 10px; right: 10px;
+  background: rgba(0, 0, 0, 0.75);
+  border-radius: 10px;
+  padding: 10px 12px;
+  text-align: left;
+  font-family: monospace;
+  font-size: 0.72rem;
+  color: #8f8;
+  pointer-events: auto;
+}
+.debug-panel h4 { color: #fff; font-size: 0.75rem; margin-bottom: 4px; }
+
+/* leaderboard */
+table.board { width: 100%; border-collapse: collapse; }
+table.board td, table.board th { padding: 10px 8px; text-align: left; }
+table.board tr:nth-child(even) { background: rgba(255, 255, 255, 0.04); }
+table.board .score-col { text-align: right; color: var(--accent); font-weight: 700; }
+
+/* หน้า error กล้อง */
+.error-box { border: 1px solid var(--danger); }
+.error-box h2 { color: var(--danger); margin-bottom: 8px; }
+.error-box ol { text-align: left; margin: 12px 0 12px 24px; color: var(--muted); }
+
+.hidden { display: none !important; }
+
+/* loading spinner */
+.spinner {
+  width: 42px; height: 42px;
+  margin: 16px auto;
+  border: 4px solid var(--card);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 480px) {
+  h1 { font-size: 1.8rem; }
+  .btn-primary { width: 100%; }
+}

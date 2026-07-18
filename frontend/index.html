@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DANCE DETECTOR — The Dab Challenge</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>DAB <span class="accent">DETECTOR</span></h1>
+    <p class="tagline">ทำท่า Dab ให้เป๊ะที่สุดใน 20 วินาที แล้วขึ้นกระดานอันดับ!</p>
+
+    <div class="card">
+      <!-- TODO: เปลี่ยนเป็น GIF ตัวอย่างท่าจริง -->
+      <div style="font-size:4rem" aria-hidden="true">🙅</div>
+      <p class="notice">ตัวอย่างท่า Dab: แขนหนึ่งเหยียดชี้ขึ้นเฉียง อีกแขนพับ ซุกหน้าเข้าข้อศอก</p>
+    </div>
+
+    <!-- ข้อความความเป็นส่วนตัว ต้องเห็นก่อนไปหน้าที่ขอกล้อง (Pain Point 1) -->
+    <div class="privacy-note">
+      🔒 ภาพจากกล้องประมวลผลบนเครื่องของคุณทั้งหมด<br />
+      <strong>ไม่มีการบันทึกหรือส่งวิดีโอออกจากเครื่องเด็ดขาด</strong>
+    </div>
+    <p class="notice">⏱ ใช้เวลา 20 วินาที และต้องลุกขึ้นขยับตัว — หาที่ที่สะดวกก่อนเริ่มนะ</p>
+
+    <p style="margin:18px 0">
+      <a class="btn btn-primary" href="pages/play.html">เริ่ม DAB</a>
+    </p>
+    <p><a class="btn btn-secondary" href="pages/leaderboard.html">ดูอันดับอย่างเดียว</a></p>
+
+    <!-- Top 5 เรียกความอยากเล่น -->
+    <div class="card">
+      <h3>🏆 Top 5</h3>
+      <div id="top-scores"><div class="spinner"></div></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { fetchTopScores } from "./js/api.js";
+    import { preloadModel } from "./js/pose.js";
+
+    // เริ่มโหลดโมเดล MediaPipe เบื้องหลังตั้งแต่หน้านี้ — พอไปหน้าเล่นจะไม่ต้องรอ
+    preloadModel().catch(() => {/* ถ้าพลาดหน้า play จะลองใหม่เอง */});
+
+    const box = document.getElementById("top-scores");
+    try {
+      const scores = await fetchTopScores(5);
+      if (scores.length === 0) {
+        box.innerHTML = `<p class="notice">ยังไม่มีใครกล้า — เป็นคนแรกเลยไหม?</p>`;
+      } else {
+        box.innerHTML = `<table class="board">${scores
+          .map((s, i) => `<tr><td>${i + 1}.</td><td>${s.nickname}</td><td class="score-col">${s.score.toFixed(1)}</td></tr>`)
+          .join("")}</table>`;
+      }
+    } catch {
+      box.innerHTML = `<p class="notice">โหลดอันดับไม่สำเร็จ ลองใหม่ภายหลัง</p>`;
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>กระดานอันดับ — DAB DETECTOR</title>
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+  <div class="container">
+    <h1 style="font-size:1.6rem">🏆 กระดาน<span class="accent">อันดับ</span></h1>
+
+    <div class="card">
+      <div id="board"><div class="spinner"></div></div>
+    </div>
+
+    <p><a class="btn btn-primary" href="play.html">เริ่ม DAB</a></p>
+    <p><a class="btn btn-secondary" href="../index.html">กลับหน้าแรก</a></p>
+  </div>
+
+  <script type="module">
+    import { fetchTopScores } from "../js/api.js";
+
+    const board = document.getElementById("board");
+    // id ของคะแนนที่เพิ่งส่ง (Phase 5 จะเก็บหลัง POST) — ใช้ไฮไลต์แถวตัวเอง
+    const myId = Number(sessionStorage.getItem("myScoreId"));
+
+    try {
+      const scores = await fetchTopScores(20);
+      if (scores.length === 0) {
+        // Edge Case 11: กระดานว่าง — ชวนเล่น ไม่โชว์ตารางเปล่า
+        board.innerHTML = `<p style="font-size:1.1rem">ยังไม่มีใครกล้า — เป็นคนแรกเลยไหม? 😏</p>`;
+      } else {
+        board.innerHTML = `<table class="board">
+          <tr><th>#</th><th>ชื่อ</th><th style="text-align:right">คะแนน</th><th style="text-align:right">ครั้ง</th></tr>
+          ${scores.map((s, i) => `
+            <tr${s.id === myId ? ' style="outline:2px solid var(--accent);border-radius:6px"' : ""}>
+              <td>${["🥇","🥈","🥉"][i] ?? i + 1}</td>
+              <td>${s.nickname}</td>
+              <td class="score-col">${s.score.toFixed(1)}</td>
+              <td style="text-align:right;color:var(--muted)">${s.dab_count}</td>
+            </tr>`).join("")}
+        </table>`;
+      }
+    } catch {
+      board.innerHTML = `<p class="notice">โหลดอันดับไม่สำเร็จ ลองรีเฟรชอีกครั้ง</p>`;
+    }
+  </script>
+</body>
+</html>
