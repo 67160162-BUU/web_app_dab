@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ผู้ดูแลระบบ (Admin) — DANCE DETECTOR</title>
+  <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    .admin-container { max-width: 1000px; }
+    .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; text-align: left; }
+    .admin-table { width: 100%; margin-top: 16px; border-collapse: collapse; }
+    .admin-table th, .admin-table td { padding: 12px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 0.9rem; }
+    .admin-table th { color: var(--accent); background: rgba(0,0,0,0.3); }
+    .badge-role { padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
+    .badge-role.admin { background: var(--accent); color: #000; }
+    .badge-role.player { background: rgba(255,255,255,0.1); color: var(--muted); }
+    .action-btn-sm { padding: 4px 8px; font-size: 0.75rem; margin-right: 4px; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <div class="container admin-container">
+    <div class="admin-header">
+      <div>
+        <h1>DANCE <span class="accent">ADMIN</span></h1>
+        <p class="tagline">ระบบจัดการผู้ใช้และคะแนนหลังบ้าน</p>
+      </div>
+      <div>
+        <span id="admin-name" style="margin-right: 12px; color: var(--accent2);"></span>
+        <button id="btn-logout" class="btn btn-secondary">ออกจากระบบ</button>
+      </div>
+    </div>
+
+    <!-- Section Login Form (แสดงเมื่อยังไม่ได้ Login เป็น Admin) -->
+    <section id="sec-login" class="card">
+      <h2 style="margin-bottom: 16px; color: var(--accent);">🔐 เข้าสู่ระบบ Admin</h2>
+      <form id="form-admin-login" style="max-width: 360px; margin: 0 auto; text-align: left;">
+        <div class="input-group">
+          <label>Username</label>
+          <input type="text" id="admin-user" required placeholder="admin" />
+        </div>
+        <div class="input-group">
+          <label>Password</label>
+          <input type="password" id="admin-pass" required placeholder="••••••••" />
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%; margin-top: 12px;">เข้าสู่ระบบ</button>
+        <p id="login-msg" class="notice" style="margin-top: 10px; color: var(--danger); text-align: center;"></p>
+      </form>
+    </section>
+
+    <!-- Section Dashboard (แสดงเมื่อ Login แล้ว) -->
+    <section id="sec-dashboard" class="card hidden">
+      <h2 style="text-align: left; color: var(--accent2); margin-bottom: 12px;">👥 การจัดการผู้ใช้งาน (User Management)</h2>
+      <div style="overflow-x: auto;">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Username</th>
+              <th>Display Name</th>
+              <th>Role</th>
+              <th>Type</th>
+              <th>Created At</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="user-table-body">
+            <tr><td colspan="7" style="text-align: center;">กำลังโหลดข้อมูล...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <script type="module">
+    import { loginUser, fetchCurrentUser, fetchAdminUsers, updateAdminUserRole, deleteAdminUser, setAuthToken } from "../js/api.js";
+
+    const $ = (id) => document.getElementById(id);
+
+    async function checkAuth() {
+      try {
+        const user = await fetchCurrentUser();
+        if (user && user.role === "admin") {
+          $("sec-login").classList.add("hidden");
+          $("sec-dashboard").classList.remove("hidden");
+          $("admin-name").textContent = `👤 Admin: ${user.display_name}`;
+          loadUsers();
+        } else {
+          $("sec-login").classList.remove("hidden");
+          $("sec-dashboard").classList.add("hidden");
+        }
+      } catch (err) {
+        $("sec-login").classList.remove("hidden");
+        $("sec-dashboard").classList.add("hidden");
+      }
+    }
+
+    $("form-admin-login").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      $("login-msg").textContent = "";
+      try {
+        await loginUser($("admin-user").value, $("admin-pass").value);
+        checkAuth();
+      } catch (err) {
+        $("login-msg").textContent = err.message;
+      }
+    });
+
+    $("btn-logout").addEventListener("click", () => {
+      setAuthToken(null);
+      checkAuth();
+    });
+
+    async function loadUsers() {
+      try {
+        const users = await fetchAdminUsers();
+        const tbody = $("user-table-body");
+        tbody.innerHTML = users.map(u => `
+          <tr>
+            <td>${u.id}</td>
+            <td>${u.username || '-'}</td>
+            <td><strong>${u.display_name}</strong></td>
+            <td><span class="badge-role ${u.role}">${u.role}</span></td>
+            <td>${u.is_guest ? 'Guest' : 'Member'}</td>
+            <td>${u.created_at}</td>
+            <td>
+              <button class="btn btn-secondary action-btn-sm btn-role" data-id="${u.id}" data-role="${u.role === 'admin' ? 'player' : 'admin'}">
+                ${u.role === 'admin' ? 'Set Player' : 'Set Admin'}
+              </button>
+              <button class="btn btn-quit-game action-btn-sm btn-del" data-id="${u.id}">ลบ</button>
+            </td>
+          </tr>
+        `).join("");
+
+        document.querySelectorAll(".btn-role").forEach(btn => {
+          btn.addEventListener("click", async (e) => {
+            const uid = e.target.dataset.id;
+            const newRole = e.target.dataset.role;
+            if (confirm(`คุณต้องการเปลี่ยน Role ของ User #${uid} เป็น ${newRole} หรือไม่?`)) {
+              await updateAdminUserRole(uid, newRole);
+              loadUsers();
+            }
+          });
+        });
+
+        document.querySelectorAll(".btn-del").forEach(btn => {
+          btn.addEventListener("click", async (e) => {
+            const uid = e.target.dataset.id;
+            if (confirm(`คุณต้องการลบ User #${uid} หรือไม่?`)) {
+              await deleteAdminUser(uid);
+              loadUsers();
+            }
+          });
+        });
+
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    checkAuth();
+  </script>
+</body>
+</html>

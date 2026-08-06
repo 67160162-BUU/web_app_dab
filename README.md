@@ -1,93 +1,125 @@
-# DANCE DETECTOR
+# DANCE DETECTOR — Viral Pose & Dance Challenge
 
-เว็บเกมตรวจจับ **ท่าเต้น/ท่ามีม** ด้วยกล้อง ใช้ **Google MediaPipe Pose Landmarker** อ่านโครงร่างร่างกาย 33 จุดแบบเรียลไทม์ แล้วให้คะแนนว่าทำท่าได้เป๊ะแค่ไหน
+เว็บเกมตรวจจับท่าเต้นและท่ามีมไวรัลด้วยกล้อง ใช้ Google MediaPipe Pose Landmarker ประมวลผลโครงสร้างร่างกาย 33 จุดแบบเรียลไทม์บนเบราว์เซอร์ พร้อมระบบสะสมคะแนน กระดานผู้นำ (Leaderboard) และระบบสมาชิก (User Session & Authentication)
 
-ท่าแรกที่เปิดให้เล่นคือ **Dab** — ออกแบบระบบให้เพิ่มท่าอื่นและ game mode อื่นได้ในภายหลัง
-
-> **ภาพจากกล้องประมวลผลบนเครื่องผู้ใช้ทั้งหมด** ไม่มีการบันทึกหรือส่งวิดีโอออกจากเบราว์เซอร์ (ตรวจสอบได้จากแท็บ Network)
+> **ความเป็นส่วนตัว 100%:** ภาพจากกล้องประมวลผลบนเครื่องของผู้ใช้เท่านั้น ไม่มีบันทึกหรือส่งวิดีโอออกจากเบราว์เซอร์ (สามารถตรวจสอบผ่าน Network Tab ได้)
 
 ---
 
-## สถานะปัจจุบัน
+## ฟีเจอร์หลัก (Features)
 
-โปรเจกต์นี้ยังอยู่ระหว่างพัฒนา — **repo นี้มีเฉพาะส่วน frontend**
+### 1. ท่าเต้นที่รองรับ (3 Viral Poses)
+- **Dab Challenge (`dab`):** ซุกหน้าเข้าข้อศอก แขนอีกข้างเหยียดตรงขึ้นฟ้า
+- **Six-Seven Dance (`six_seven`):** ยกมือทำท่า 6-7 สลับมือตามจังหวะ
+- **Scuba Diver (`scuba`):** ยกมือแนบศีรษะทำท่าดำน้ำ ดำดิ่งอย่างเป๊ะปัง
 
-- ❌ **ยังไม่มีฐานข้อมูล** และยังไม่มี backend API รันอยู่
-- ❌ **กระดานอันดับ (leaderboard) เป็นข้อมูล mockup** ยังไม่ได้เก็บคะแนนจริง คะแนนที่เล่นได้จะยังไม่ถูกบันทึก
-- ✅ ส่วนที่ทำงานได้จริงแล้ว: เปิดกล้อง, วาดโครงกระดูกเรียลไทม์, ตรวจจับและให้คะแนนท่า Dab, นับจำนวนครั้ง, Debug Panel
+### 2. ระบบคำนวณคะแนน & กันโกง (Accuracy Engine)
+- **ไม่ขึ้นกับระยะกล้อง:** ระยะทางทุกเกณฑ์หารด้วยความกว้างไหล่ (`Shoulder Width`) ก่อนเสมอ ยืนใกล้หรือไกลได้คะแนนมาตรฐานเท่ากัน
+- **State Machine กันสแปม:** ค้างท่าไว้เฉยๆ ไม่นับครั้ง ต้องผ่อนท่ากลับปกติก่อนจึงจะนับครั้งถัดไปได้
+- **Feedback สีโครงกระดูกสด:** สีโครงกระดูกเปลี่ยนสีตามคะแนนความเป๊ะ (แดง -> เหลือง -> เขียว)
+
+### 3. ระบบสมาชิก & ล็อกอิน (User Session & Auth)
+- **แยก Username & Display Name:** 
+  - `Username`: ไอดีสำหรับเข้าสู่ระบบ (ภาษาอังกฤษ/ตัวเลข ตั้งแล้วเปลี่ยนไม่ได้)
+  - `Display Name`: ชื่อฉายาที่โชว์บน Leaderboard (เปลี่ยนได้ตลอดเวลา)
+- **ระบบ Login Modal:** แถบเข้าสู่ระบบมุมขวาบน ล็อกอินด้วย Username & Password รหัสผ่านเข้ารหัสแบบ Bcrypt Hashing
+- **จำ Session อัตโนมัติ:** บันทึก Session ลง `LocalStorage` (`dd_user_session` + JWT Bearer Token)
+- **บันทึกคะแนนอัตโนมัติ:** เมื่อล็อกอินอยู่ เล่นเกมจบระบบจะดึงชื่อ Display Name และไอดีผู้ใช้มาบันทึกคะแนนเข้าสู่ระบบให้อัตโนมัติทันทีโดยไม่ต้องพิมพ์รหัสผ่านซ้ำ
+
+### 4. กระดานผู้นำ High Score (1 คนต่อ 1 อันดับ)
+- **High Score per User:** จัดกลุ่มคะแนนสูงสุด (`GROUP BY user_id`) แสดงผลผลงานที่ดีที่สุด 1 อันดับต่อ 1 ผู้เล่น ป้องกันผู้เล่นสแปมติดอันดับซ้ำเต็มตาราง
+- **4 ตารางอันดับ:**
+  1. คะแนนรวมสูงสุด (Overall Top Scores)
+  2. ท่า Dab Challenge (นับจำนวนครั้งสูงสุด)
+  3. ท่า Six-Seven Dance (นับจำนวนครั้งสูงสุด)
+  4. ท่า Scuba Diver (นับจำนวนครั้งสูงสุด)
+
+### 5. ระบบสำรองเมื่อไม่มี DB (Offline / Local Storage Fallback)
+- หากเปิดเล่นแบบไม่มี Backend / DB รันอยู่ ตัวเกมจะสลับไปใช้ LocalStorage Fallback ใน [api.js](file:///Applications/XAMPP/xamppfiles/htdocs/web_app_dab/frontend/js/api.js) อัตโนมัติ เล่นเกมและบันทึกคะแนนบนเบราว์เซอร์ได้โดยไม่ขึ้น Error หน้าว่าง
 
 ---
 
-## ฟีเจอร์ที่ทำงานได้แล้ว
+## วิธีการติดตั้งและใช้งาน (Installation & Setup)
 
-| ฟีเจอร์ | รายละเอียด |
-|---|---|
-| **ตรวจจับท่าทาง** | MediaPipe Pose Landmarker (โมเดล `lite`) โหมด VIDEO จับคนเดียว |
-| **ให้คะแนน 5 เกณฑ์** | แขนเหยียดตรง, ยกสูงกว่าไหล่, แขนอีกข้างพับ, ซุกหน้าเข้าข้อศอก, แขนเรียงเป็นเส้นเดียว |
-| **คะแนนไม่ขึ้นกับระยะกล้อง** | ทุกระยะทางหารด้วยความกว้างไหล่ก่อนเสมอ ยืนใกล้/ไกลได้คะแนนเท่ากัน |
-| **กันโกงด้วย state machine** | ค้างท่าไว้เฉยๆ นับได้แค่ 1 ครั้ง ต้องกลับท่าปกติก่อนถึงนับครั้งถัดไป |
-| **โครงกระดูกเปลี่ยนสีตามคะแนน** | แดง → เหลือง → เขียว เป็น feedback สดระหว่างเล่น |
-| **Debug Panel** | แสดงมุมข้อศอก, ระยะมือ-จมูก, คะแนนแยกรายเกณฑ์, fps + ปุ่มบันทึก landmark เป็น JSON |
-| **จัดการ error กล้องครบ** | แยกกรณีไม่อนุญาต / ไม่มีกล้อง / กล้องถูกใช้อยู่ พร้อมวิธีแก้ ไม่ปล่อยจอขาว |
+### วิธีที่ 1: รันด้วย Docker Compose (แนะนำที่สุด)
 
----
-
-## วิธีรัน
-
-ไม่มี build step ใดๆ ต้องเสิร์ฟผ่าน web server เท่านั้น (เปิดไฟล์ตรงๆ แบบ `file://` กล้องจะไม่ทำงาน)
-
-**XAMPP** — วางโฟลเดอร์ไว้ใน `htdocs/` แล้วเปิด Apache
-
-```
-http://localhost/web_app_dab/frontend/
-```
-
-**หรือใช้ Python** (ในโฟลเดอร์ `frontend/`)
+รันคำสั่งเดียว ระบบจะสร้างทั้ง MySQL 8.0 Database (พร้อมสคริปต์ตารางและ Seed data) + FastAPI Backend Server:
 
 ```bash
-python3 -m http.server 8000
+docker compose up --build -d
 ```
 
-แล้วเข้า `http://localhost:8000`
-
-> 📷 กล้องทำงานเฉพาะบน `localhost` หรือ **HTTPS** เท่านั้น — เปิดผ่าน IP ในวง LAN (เช่น `http://192.168.1.5`) กล้องจะไม่ทำงาน
-
-### ทดสอบกรณีกล้องมีปัญหา
-
-ต่อ query string เพื่อจำลอง error โดยไม่ต้องปิดกล้องจริง
-
-- `pages/play.html?simulate=NotAllowedError` — ผู้ใช้กด Block
-- `pages/play.html?simulate=NotFoundError` — เครื่องไม่มีกล้อง
-- `pages/play.html?simulate=NotReadableError` — กล้องถูกโปรแกรมอื่นใช้อยู่
-
----
-
-## โครงสร้างไฟล์
-
+เข้าใช้งานเว็บเกมที่:
 ```
-frontend/
-├── index.html              หน้าแรก + preload โมเดล + Top 5 (mockup)
-├── css/style.css
-├── js/
-│   ├── config.js           ค่าคงที่และเกณฑ์คะแนนทั้งหมด — จูนที่นี่ที่เดียว
-│   ├── pose.js             หุ้ม MediaPipe: โหลดโมเดล, เปิดกล้อง, วาดโครงกระดูก
-│   ├── dab.js              คณิตศาสตร์ให้คะแนนล้วน (ไม่แตะ DOM/MediaPipe)
-│   └── api.js              เรียก backend API
-└── pages/
-    ├── play.html           เล่นเกม (ขอกล้อง → ตรวจจับ → ให้คะแนน)
-    └── leaderboard.html    กระดานอันดับ (ยังเป็น mockup)
+http://localhost:8000
 ```
 
 ---
 
-## เทคโนโลยี
+### วิธีที่ 2: รันแบบพัฒนาในเครื่อง (Local Development)
 
-HTML + CSS + JavaScript ธรรมดา (ไม่ใช้ framework, ไม่มี bundler) — MediaPipe โหลดผ่าน CDN แบบ ES Module
+#### 1. เปิดเซิร์ฟเวอร์ Backend (FastAPI + MySQL)
+```bash
+cd backend
+python3 -m venv venv
+source venv/bin/activate  # บน Windows: venv\Scripts\activate
+pip install -r requirements.txt
 
-## แผนงานถัดไป
+# รัน FastAPI Server
+python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+```
 
-- [ ] จูนเกณฑ์คะแนนจากค่าจริงที่อ่านได้จาก Debug Panel
-- [ ] ระบบเกมเต็มรูปแบบ (นับถอยหลัง, จับเวลา 20 วินาที, หน้าสรุปผล)
-- [ ] Backend API + ฐานข้อมูล MySQL เก็บคะแนนจริง (แทน mockup)
-- [ ] แชร์ผลคะแนนเป็นรูปภาพ
-- [ ] เพิ่ม game mode และท่ามีมอื่นๆ
+#### 2. เปิดเซิร์ฟเวอร์ Frontend
+สามารถใช้ XAMPP วางใน `htdocs/` หรือใช้ Python HTTP Server:
+```bash
+cd frontend
+python3 -m http.server 3000
+```
+แล้วเปิดเข้าใช้งานที่ `http://localhost:3000`
+
+---
+
+## โครงสร้างโปรเจกต์ (Project Structure)
+
+```
+web_app_dab/
+├── docker-compose.yml          # ไฟล์ตั้งค่า Docker (MySQL 8.0 + FastAPI Server)
+├── README.md                   # เอกสารอธิบายโปรเจกต์
+├── backend/                    # Python FastAPI Backend Services
+│   ├── Dockerfile              # Dockerfile สำหรับสร้าง Backend Image
+│   ├── requirements.txt        # Python dependencies
+│   ├── app/
+│   │   ├── main.py             # FastAPI entrypoint & CORS middleware
+│   │   ├── config.py           # DB Environment settings
+│   │   ├── database.py         # SQLAlchemy engine & session maker
+│   │   ├── models.py           # SQLAlchemy User & Score Models
+│   │   ├── auth.py             # Bcrypt hashing & JWT Token Manager
+│   │   └── routers/
+│   │       ├── auth.py         # API Endpoints: /api/auth/login, /api/auth/register
+│   │       └── scores.py       # API Endpoints: /api/scores/top, /api/scores/leaderboards
+│   └── database/
+│       ├── schema.sql          # โครงสร้างตาราง MySQL Database
+│       └── seed.sql            # ข้อมูลทดสอบเริ่มต้น
+└── frontend/                   # HTML/CSS/JavaScript Web Client
+    ├── index.html              # หน้าแรก + Preload AI + Top 5 Leaderboards
+    ├── css/style.css           # Modern Dark-Mode Design System
+    ├── js/
+    │   ├── config.js           # ค่าคงที่และเกณฑ์คะแนนท่าเต้น
+    │   ├── pose.js             # MediaPipe Pose Landmarker Wrapper & Canvas Skeleton
+    │   ├── dab.js              # คณิตศาสตร์คำนวณมุมกระดูกและความเป๊ะ
+    │   ├── poses.js            # Pose Evaluator & Counter สำหรับ 3 ท่าทาง
+    │   ├── api.js              # API Client + LocalStorage Fallback + Session Manager
+    │   └── leaderboard.js      # JS แสดงผลตารางผู้นำทุกโหมด
+    └── pages/
+        ├── play.html           # หน้าเล่นเกม (กล้องเรียลไทม์ + เลือกท่า + สรุปผลคะแนน)
+        └── leaderboard.html    # หน้าตารางผู้นำฉบับเต็ม
+```
+
+---
+
+## เทคโนโลยีที่ใช้ (Tech Stack)
+
+- **Frontend:** HTML5, CSS3 (Vanilla Dark-Mode Glassmorphism), Modern JavaScript (ES Modules), Google MediaPipe Pose Landmarker (`@mediapipe/tasks-vision`)
+- **Backend:** Python 3.11+, FastAPI, SQLAlchemy, PyMySQL, Bcrypt, Python-Jose (JWT)
+- **Database:** MySQL 8.0 Database Server
+- **DevOps & Containerization:** Docker, Docker Compose

@@ -3,19 +3,26 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DANCE DETECTOR — The Dab Challenge</title>
+  <title>DANCE DETECTOR — Viral Pose & Dance Challenge</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-  <div class="container">
-    <h1>DANCE <span class="accent">DETECTOR</span></h1>
-    <p class="tagline">ทำท่า Dab ให้เป๊ะที่สุดใน 20 วินาที แล้วขึ้นกระดานอันดับ!</p>
-
-    <div class="card">
-      <!-- TODO: เปลี่ยนเป็น GIF ตัวอย่างท่าจริง -->
-      <div style="font-size:4rem" aria-hidden="true">🙅</div>
-      <p class="notice">ตัวอย่างท่า Dab: แขนหนึ่งเหยียดชี้ขึ้นเฉียง อีกแขนพับ ซุกหน้าเข้าข้อศอก</p>
+  <div class="container" style="max-width: 960px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <h1 style="font-size:1.8rem; margin:0;">DANCE <span class="accent">DETECTOR</span></h1>
+      
+      <div id="user-session-bar">
+        <div id="session-logged-out">
+          <button class="btn btn-secondary" id="btn-show-login" style="padding:6px 14px; font-size:0.85rem;">🔑 เข้าสู่ระบบ</button>
+        </div>
+        <div id="session-logged-in" class="hidden" style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:0.88rem; color:var(--text);">👤 สวัสดี, <strong id="logged-user-name" style="color:var(--accent);">User</strong></span>
+          <button class="btn btn-secondary" id="btn-logout" style="padding:4px 8px; font-size:0.75rem; background:rgba(239, 68, 68, 0.2); color:#ef4444; border-color:#ef4444;">ออกจากระบบ</button>
+        </div>
+      </div>
     </div>
+
+    <p class="tagline">ทำท่าเต้นและท่ามีมไวรัลให้เป๊ะที่สุดใน 20 วินาที แล้วขึ้นกระดานอันดับ!</p>
 
     <!-- ข้อความความเป็นส่วนตัว ต้องเห็นก่อนไปหน้าที่ขอกล้อง (Pain Point 1) -->
     <div class="privacy-note">
@@ -24,37 +31,151 @@
     </div>
     <p class="notice">⏱ ใช้เวลา 20 วินาที และต้องลุกขึ้นขยับตัว — หาที่ที่สะดวกก่อนเริ่มนะ</p>
 
-    <p style="margin:18px 0">
-      <a class="btn btn-primary" href="pages/play.html">เริ่ม DAB</a>
-    </p>
-    <p><a class="btn btn-secondary" href="pages/leaderboard.html">ดูอันดับอย่างเดียว</a></p>
+    <div style="margin: 20px 0; display: flex; flex-direction: column; gap: 12px; align-items: center;">
+      <a class="btn btn-primary" href="pages/play.html" style="width: 100%; max-width: 340px;">🎮 เริ่มเล่นเกม</a>
+      <a class="btn btn-secondary" href="pages/leaderboard.html" style="width: 100%; max-width: 340px;">🏆 ดูอันดับทั้งหมด</a>
+    </div>
 
-    <!-- Top 5 เรียกความอยากเล่น -->
-    <div class="card">
-      <h3>🏆 Top 5</h3>
-      <div id="top-scores"><div class="spinner"></div></div>
+    <!-- กระดานอันดับ 4 ตาราง บนหน้า Index -->
+    <div style="margin-top: 28px;">
+      <h2 style="font-size:1.3rem; margin-bottom: 14px; text-align: center;">🏆 กระดานผู้นำ <span class="accent">Top 5</span> ทุกท่าทาง</h2>
+      
+      <div id="index-leaderboards-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 16px;">
+        <div class="card"><div class="spinner"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Modal เข้าสู่ระบบ (Login) ═══ -->
+  <div id="modal-login" class="modal-backdrop hidden">
+    <div class="modal-card" style="max-width: 400px;">
+      <h2 class="modal-title">🔑 เข้าสู่ระบบ</h2>
+      <p class="modal-subtitle">กรอก Username และ Password เพื่อเข้าสู่ระบบ</p>
+      <form id="form-login" onsubmit="return false;">
+        <div class="input-group" style="text-align: left;">
+          <label for="login-username">👤 Username / ไอดีล็อกอิน</label>
+          <input type="text" id="login-username" placeholder="ใส่ Username" required />
+        </div>
+        <div class="input-group" style="text-align: left; margin-top: 10px;">
+          <label for="login-password">🔑 Password / รหัสผ่าน</label>
+          <input type="password" id="login-password" placeholder="ใส่รหัสผ่าน" required />
+        </div>
+        <div id="login-msg" class="notice" style="margin-top: 8px;"></div>
+        <div class="modal-actions" style="margin-top: 16px;">
+          <button type="submit" class="btn btn-primary" id="btn-submit-login" style="width: 100%;">เข้าสู่ระบบ</button>
+          <button type="button" class="btn btn-secondary" id="btn-close-login">ยกเลิก</button>
+        </div>
+      </form>
     </div>
   </div>
 
   <script type="module">
-    import { fetchTopScores } from "./js/api.js";
+    import { fetchLeaderboards, loginUser, getSavedSession, clearSession } from "./js/api.js";
     import { preloadModel } from "./js/pose.js";
 
-    // เริ่มโหลดโมเดล MediaPipe เบื้องหลังตั้งแต่หน้านี้ — พอไปหน้าเล่นจะไม่ต้องรอ
+    const $ = (id) => document.getElementById(id);
+
+    function updateAuthUI() {
+      const session = getSavedSession();
+      if (session && session.user) {
+        $("session-logged-out")?.classList.add("hidden");
+        $("session-logged-in")?.classList.remove("hidden");
+        if ($("logged-user-name")) $("logged-user-name").textContent = session.user.display_name || session.user.username;
+      } else {
+        $("session-logged-out")?.classList.remove("hidden");
+        $("session-logged-in")?.classList.add("hidden");
+      }
+    }
+
+    $("btn-show-login")?.addEventListener("click", () => $("modal-login")?.classList.remove("hidden"));
+    $("btn-close-login")?.addEventListener("click", () => $("modal-login")?.classList.add("hidden"));
+    $("btn-logout")?.addEventListener("click", () => { clearSession(); updateAuthUI(); });
+
+    $("form-login")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const uname = $("login-username")?.value?.trim();
+      const pass = $("login-password")?.value?.trim();
+      if (!uname || !pass) return;
+
+      $("login-msg").textContent = "⏳ กำลังเข้าสู่ระบบ…";
+      $("btn-submit-login").disabled = true;
+
+      try {
+        await loginUser(uname, pass);
+        $("login-msg").textContent = "✅ เข้าสู่ระบบสำเร็จ!";
+        updateAuthUI();
+        setTimeout(() => {
+          $("modal-login")?.classList.add("hidden");
+          $("login-msg").textContent = "";
+          $("btn-submit-login").disabled = false;
+        }, 600);
+      } catch (err) {
+        $("login-msg").textContent = `❌ ${err.message}`;
+        $("btn-submit-login").disabled = false;
+      }
+    });
+
+    updateAuthUI();
+
+    // เริ่มโหลดโมเดล MediaPipe เบื้องหลังตั้งแต่หน้านี้
     preloadModel().catch(() => {/* ถ้าพลาดหน้า play จะลองใหม่เอง */});
 
-    const box = document.getElementById("top-scores");
-    try {
-      const scores = await fetchTopScores(5);
-      if (scores.length === 0) {
-        box.innerHTML = `<p class="notice">ยังไม่มีใครกล้า — เป็นคนแรกเลยไหม?</p>`;
-      } else {
-        box.innerHTML = `<table class="board">${scores
-          .map((s, i) => `<tr><td>${i + 1}.</td><td>${s.nickname}</td><td class="score-col">${s.score.toFixed(1)}</td></tr>`)
-          .join("")}</table>`;
+    const grid = document.getElementById("index-leaderboards-grid");
+
+    function renderTable(list, type = "score") {
+      if (!list || list.length === 0) {
+        return `<p class="notice" style="font-size:0.85rem; padding: 8px 0;">ยังไม่มีอันดับ — เป็นคนแรกเลยไหม? 😏</p>`;
       }
+      return `<table class="board" style="font-size:0.9rem;">
+        <tr><th>#</th><th>ชื่อผู้เล่น</th><th style="text-align:right">${type === "score" ? "คะแนน" : "ครั้ง"}</th></tr>
+        ${list.slice(0, 5).map((s, i) => `
+          <tr>
+            <td>${["🥇","🥈","🥉"][i] ?? (i + 1)}</td>
+            <td><strong>${s.nickname}</strong></td>
+            <td style="text-align:right; font-weight:700; color:var(--accent)">
+              ${type === "score" ? Number(s.score).toFixed(0) : `${s.count ?? s.dab_count ?? 0} ครั้ง`}
+            </td>
+          </tr>`).join("")}
+      </table>`;
+    }
+
+    try {
+      const data = await fetchLeaderboards(5);
+      grid.innerHTML = `
+        <!-- ตารางที่ 1: คะแนนรวมสูงสุด -->
+        <div class="card" style="text-align:left;">
+          <h4 style="margin-bottom:10px; color:var(--accent); font-size:1.05rem; display:flex; align-items:center; gap:6px;">
+            <span>🏆</span> คะแนนรวมสูงสุด
+          </h4>
+          ${renderTable(data.overall, "score")}
+        </div>
+
+        <!-- ตารางที่ 2: ท่า Dab -->
+        <div class="card" style="text-align:left;">
+          <h4 style="margin-bottom:10px; color:var(--accent); font-size:1.05rem; display:flex; align-items:center; gap:6px;">
+            <span>🙅</span> Dab Challenge (ครั้ง)
+          </h4>
+          ${renderTable(data.dab, "count")}
+        </div>
+
+        <!-- ตารางที่ 3: ท่า Six-Seven -->
+        <div class="card" style="text-align:left;">
+          <h4 style="margin-bottom:10px; color:var(--accent); font-size:1.05rem; display:flex; align-items:center; gap:6px;">
+            <span>🔢</span> Six-Seven Dance (ครั้ง)
+          </h4>
+          ${renderTable(data.six_seven, "count")}
+        </div>
+
+        <!-- ตารางที่ 4: ท่า Scuba Diver -->
+        <div class="card" style="text-align:left;">
+          <h4 style="margin-bottom:10px; color:var(--accent); font-size:1.05rem; display:flex; align-items:center; gap:6px;">
+            <span>🤿</span> Scuba Diver (ครั้ง)
+          </h4>
+          ${renderTable(data.scuba, "count")}
+        </div>
+      `;
     } catch {
-      box.innerHTML = `<p class="notice">โหลดอันดับไม่สำเร็จ ลองใหม่ภายหลัง</p>`;
+      grid.innerHTML = `<div class="card"><p class="notice">โหลดกระดานอันดับไม่สำเร็จ ลองใหม่ภายหลัง</p></div>`;
     }
   </script>
 </body>

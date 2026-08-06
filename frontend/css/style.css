@@ -1,76 +1,207 @@
-/* ธีมหลัก DANCE DETECTOR — มืดแบบเกม เน้นปุ่มเดียวใหญ่ๆ */
-* { margin: 0; padding: 0; box-sizing: border-box; }
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=Prompt:wght@300;400;600;700&display=swap');
+
+/* ═══ ธีมพรีเมียม DANCE DETECTOR — มืดแนว Sci-Fi เกมอาร์เคด ═══ */
+* { 
+  margin: 0; 
+  padding: 0; 
+  box-sizing: border-box; 
+}
 
 :root {
-  --bg: #12121c;
-  --card: #1d1d2e;
+  --bg: #0b0a12;
+  --bg-gradient: radial-gradient(circle at 50% 30%, #1e1b36 0%, #0b0a12 80%);
+  --card: rgba(25, 23, 42, 0.65);
+  --card-border: rgba(255, 255, 255, 0.08);
   --accent: #ffd60a;
-  --accent2: #06d6a0;
-  --danger: #ef476f;
-  --text: #f1f1f6;
-  --muted: #9a9ab0;
+  --accent-glow: rgba(255, 214, 10, 0.25);
+  --accent2: #00f5d4;
+  --accent2-glow: rgba(0, 245, 212, 0.35);
+  --danger: #ff5d8f;
+  --danger-glow: rgba(255, 93, 143, 0.3);
+  --text: #f3f3f7;
+  --muted: #a09eb5;
+  --glow-speed: 2s;
 }
 
 body {
   background: var(--bg);
+  background-image: var(--bg-gradient);
   color: var(--text);
-  font-family: "Segoe UI", "Prompt", system-ui, sans-serif;
+  font-family: "Outfit", "Prompt", system-ui, -apple-system, sans-serif;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
+  overflow-x: hidden;
 }
 
-.container { width: 100%; max-width: 560px; padding: 24px 16px; text-align: center; }
+.container { 
+  width: 100%; 
+  max-width: 580px; 
+  padding: 32px 20px; 
+  text-align: center; 
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: fadeIn 0.6s ease-out;
+}
 
-h1 { font-size: 2.4rem; letter-spacing: 2px; }
-h1 .accent { color: var(--accent); }
-.tagline { color: var(--muted); margin: 8px 0 20px; }
+/* คอนเทนเนอร์ขนาดใหญ่พิเศษสำหรับหน้าเล่น เพื่อขยายหน้ากล้อง */
+.container.container-wide { 
+  max-width: 1080px; 
+}
 
+h1 { 
+  font-size: 2.8rem; 
+  font-weight: 800;
+  letter-spacing: 3px; 
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #ffffff 40%, #c4c1e0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5));
+  margin-bottom: 4px;
+}
+h1 .accent { 
+  color: var(--accent); 
+  background: linear-gradient(135deg, var(--accent) 0%, #ff9e00 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.tagline { 
+  color: var(--muted); 
+  font-size: 1.05rem;
+  margin: 0px 0 10px; 
+  font-weight: 300;
+}
+
+/* ดีไซน์การ์ดแบบ Glassmorphism */
 .card {
   background: var(--card);
-  border-radius: 16px;
-  padding: 20px;
-  margin: 14px 0;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--card-border);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+.card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(225deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%);
+  pointer-events: none;
+}
+.card:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.5);
 }
 
-/* ปุ่ม */
+/* ปุ่มสไตล์ Arcade */
 .btn {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: none;
-  border-radius: 999px;
-  padding: 16px 42px;
-  font-size: 1.25rem;
+  border-radius: 14px;
+  padding: 16px 36px;
+  font-size: 1.15rem;
   font-weight: 700;
   cursor: pointer;
   text-decoration: none;
-  transition: transform 0.1s;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
 }
-.btn:active { transform: scale(0.96); }
-.btn-primary { background: var(--accent); color: #1a1a00; }
-.btn-secondary { background: transparent; color: var(--muted); border: 1px solid var(--muted); font-size: 1rem; padding: 10px 24px; }
-.btn:disabled { opacity: 0.5; cursor: wait; }
 
-/* ข้อความความเป็นส่วนตัว — ต้องเห็นก่อนกดปุ่มเปิดกล้อง */
+.btn-primary { 
+  background: linear-gradient(135deg, var(--accent) 0%, #ffa200 100%); 
+  color: #111003; 
+  box-shadow: 0 4px 20px var(--accent-glow);
+}
+.btn-primary:hover { 
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(255, 214, 10, 0.45);
+  filter: brightness(1.1);
+}
+.btn-primary:active {
+  transform: translateY(1px);
+}
+
+.btn-secondary { 
+  background: rgba(255, 255, 255, 0.04); 
+  color: var(--text); 
+  border: 1px solid rgba(255, 255, 255, 0.15); 
+  font-size: 0.95rem; 
+  padding: 12px 28px; 
+}
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+.btn-secondary:active {
+  transform: translateY(1px);
+}
+.btn:disabled { 
+  opacity: 0.5; 
+  cursor: wait; 
+}
+
+/* ข้อความความเป็นส่วนตัว */
 .privacy-note {
-  background: rgba(6, 214, 160, 0.12);
-  border: 1px solid var(--accent2);
+  background: rgba(0, 245, 212, 0.06);
+  border: 1px solid rgba(0, 245, 212, 0.25);
   color: var(--accent2);
-  border-radius: 10px;
-  padding: 12px;
-  font-size: 0.9rem;
-  margin: 14px 0;
+  border-radius: 12px;
+  padding: 14px;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  box-shadow: 0 0 15px rgba(0, 245, 212, 0.05);
 }
-.notice { color: var(--muted); font-size: 0.85rem; }
+.notice { 
+  color: var(--muted); 
+  font-size: 0.88rem; 
+  line-height: 1.4;
+}
 
-/* กล้อง + canvas ทับกัน และ mirror ทั้งคู่ */
+/* ═══ ส่วนการแสดงผลกล้องและตรวจจับ (Stage Area) ═══ */
+.play-layout {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 28px;
+  text-align: left;
+  margin-top: 12px;
+  width: 100%;
+}
+
+.play-main {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.play-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* กล้องหลักขยายขนาดใหญ่ขึ้น */
 .stage {
   position: relative;
   width: 100%;
   aspect-ratio: 4 / 3;
   background: #000;
-  border-radius: 16px;
+  border-radius: 24px;
   overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
 }
 .stage video, .stage canvas {
   position: absolute;
@@ -78,79 +209,557 @@ h1 .accent { color: var(--accent); }
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transform: scaleX(-1);   /* ภาพกระจก — จำไว้ว่า left ของ MediaPipe อยู่ขวาจอ */
+  transform: scaleX(-1);
 }
-.stage canvas { z-index: 2; }
+.stage canvas { 
+  z-index: 2; 
+}
 
-/* ป้ายสถานะ / คะแนนสด ทับบนวิดีโอ */
+/* การจัดวางป้ายสถานะทับบนวิดีโอแบบไม่ทับซ้อนกัน */
 .overlay {
   position: absolute;
   z-index: 3;
-  left: 0; right: 0;
-  display: flex;
-  justify-content: center;
   pointer-events: none;
+  display: flex;
+  align-items: center;
 }
-.overlay.top { top: 10px; }
-.overlay.bottom { bottom: 10px; }
-.badge {
-  background: rgba(0, 0, 0, 0.65);
-  border-radius: 999px;
-  padding: 8px 18px;
-  font-size: 1rem;
-  font-weight: 600;
+.overlay.top { 
+  top: 16px; 
+  left: 16px;
 }
-.badge.ok { color: var(--accent2); }
-.badge.warn { color: var(--accent); }
+.overlay.top-right {
+  top: 16px;
+  right: 16px;
+}
 
+/* ป้ายสถานะแบบไม่บดบังสายตา */
+.badge {
+  background: rgba(11, 10, 18, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border-radius: 12px;
+  padding: 10px 20px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.badge.ok { 
+  color: var(--accent2); 
+  border-color: var(--accent2);
+  box-shadow: 0 0 15px var(--accent2-glow);
+}
+.badge.warn { 
+  color: var(--accent); 
+  border-color: var(--accent);
+  box-shadow: 0 0 15px var(--accent-glow);
+}
+
+/* คะแนนสดแบบแคปซูลนีออน */
+.live-score-pill {
+  background: rgba(11, 10, 18, 0.85);
+  border: 1px solid var(--accent);
+  border-radius: 12px;
+  padding: 8px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 0 15px var(--accent-glow);
+}
+.live-score-pill .pill-label {
+  font-size: 0.65rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
 .live-score {
-  font-size: 2rem;
+  font-size: 1.8rem;
   font-weight: 800;
   color: var(--accent);
-  text-shadow: 0 2px 8px #000;
+  line-height: 1.1;
 }
 
-/* Debug Panel — ใช้ตอนจูนค่า (Phase 3) */
+/* ═══ แผงควบคุมและดีบักในคอลัมน์ขวา ═══ */
+.status-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 32px 24px;
+}
+
+.counter-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.counter-label {
+  font-size: 1rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.counter-number-wrapper {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  width: 140px;
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 4px 10px rgba(0,0,0,0.5);
+}
+.counter-number {
+  font-size: 4.8rem;
+  font-weight: 800;
+  color: var(--accent2);
+  text-shadow: 0 0 20px var(--accent2-glow);
+  transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  display: inline-block;
+}
+
+/* แอนิเมชันป๊อป (Pulse) ตอนได้คะแนน */
+.pulse-active {
+  animation: counterBump 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+@keyframes counterBump {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.3); color: var(--accent); text-shadow: 0 0 30px var(--accent-glow); }
+  100% { transform: scale(1); }
+}
+
+.play-instructions {
+  max-width: 240px;
+  margin-top: 10px;
+}
+
+/* แถบควบคุม */
+.controls-card {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.btn-toggle-debug {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--muted);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.9rem;
+  padding: 14px;
+}
+.btn-toggle-debug.active {
+  background: rgba(255, 214, 10, 0.1);
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+.btn-quit-game {
+  background: rgba(255, 93, 143, 0.1);
+  color: var(--danger);
+  border: 1px solid rgba(255, 93, 143, 0.2);
+  font-size: 0.95rem;
+  padding: 14px;
+}
+.btn-quit-game:hover {
+  background: rgba(255, 93, 143, 0.25);
+  border-color: var(--danger);
+  box-shadow: 0 0 15px var(--danger-glow);
+}
+
+/* แผงดีบั๊กแยกส่วนและพับเก็บได้ */
 .debug-panel {
-  position: absolute;
-  z-index: 4;
-  top: 10px; right: 10px;
-  background: rgba(0, 0, 0, 0.75);
-  border-radius: 10px;
-  padding: 10px 12px;
-  text-align: left;
-  font-family: monospace;
-  font-size: 0.72rem;
-  color: #8f8;
-  pointer-events: auto;
+  background: rgba(11, 10, 18, 0.9);
+  border: 1px solid rgba(0, 245, 212, 0.2);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  transition: all 0.3s ease;
+  max-height: 500px;
+  opacity: 1;
+  overflow: hidden;
 }
-.debug-panel h4 { color: #fff; font-size: 0.75rem; margin-bottom: 4px; }
+.debug-panel.hidden-debug {
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  border-color: transparent;
+  opacity: 0;
+  pointer-events: none;
+  margin: 0;
+}
+.debug-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 8px;
+}
+.debug-header h4 { 
+  color: var(--accent2); 
+  font-size: 0.8rem; 
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+.btn-mini {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: #fff;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 0.65rem;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+.btn-mini:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: var(--accent2);
+}
+.debug-body {
+  font-family: 'Courier New', monospace;
+  font-size: 0.75rem;
+  color: #bbf7d0;
+  line-height: 1.6;
+}
 
-/* leaderboard */
-table.board { width: 100%; border-collapse: collapse; }
-table.board td, table.board th { padding: 10px 8px; text-align: left; }
-table.board tr:nth-child(even) { background: rgba(255, 255, 255, 0.04); }
-table.board .score-col { text-align: right; color: var(--accent); font-weight: 700; }
+/* ═══ ตารางคะแนนลีดเดอร์บอร์ด ═══ */
+table.board { 
+  width: 100%; 
+  border-collapse: separate; 
+  border-spacing: 0 8px;
+  margin-top: 8px;
+}
+table.board th {
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 8px 12px;
+}
+table.board tr {
+  transition: transform 0.2s;
+}
+table.board td { 
+  padding: 14px 12px; 
+  text-align: left; 
+  background: rgba(255, 255, 255, 0.02);
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+table.board td:first-child {
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
+  border-left: 1px solid rgba(255, 255, 255, 0.04);
+}
+table.board td:last-child {
+  border-top-right-radius: 12px;
+  border-bottom-right-radius: 12px;
+  border-right: 1px solid rgba(255, 255, 255, 0.04);
+}
+table.board tr:hover td { 
+  background: rgba(255, 255, 255, 0.05); 
+}
+table.board .score-col { 
+  text-align: right; 
+  color: var(--accent); 
+  font-weight: 700; 
+  font-size: 1.1rem;
+}
 
-/* หน้า error กล้อง */
-.error-box { border: 1px solid var(--danger); }
-.error-box h2 { color: var(--danger); margin-bottom: 8px; }
-.error-box ol { text-align: left; margin: 12px 0 12px 24px; color: var(--muted); }
+/* กล่องความผิดพลาดกล้อง */
+.error-box { 
+  border: 1px solid rgba(255, 93, 143, 0.35) !important; 
+  box-shadow: 0 10px 30px var(--danger-glow);
+}
+.error-box h2 { 
+  color: var(--danger); 
+  margin-bottom: 12px; 
+  font-size: 1.5rem;
+}
+.error-box ol { 
+  text-align: left; 
+  margin: 16px 0 16px 24px; 
+  color: var(--muted); 
+  line-height: 1.7;
+}
 
-.hidden { display: none !important; }
+.hidden { 
+  display: none !important; 
+}
 
-/* loading spinner */
+/* โหลดเดอร์แอนิเมชัน */
 .spinner {
-  width: 42px; height: 42px;
-  margin: 16px auto;
-  border: 4px solid var(--card);
-  border-top-color: var(--accent);
+  width: 48px; 
+  height: 48px;
+  margin: 24px auto;
+  border: 4px solid rgba(255, 255, 255, 0.05);
+  border-top-color: var(--accent2);
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  animation: spin 0.8s cubic-bezier(0.5, 0.1, 0.5, 0.9) infinite;
+  box-shadow: 0 0 15px rgba(0, 245, 212, 0.15);
 }
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin { 
+  to { transform: rotate(360deg); } 
+}
 
-@media (max-width: 480px) {
-  h1 { font-size: 1.8rem; }
-  .btn-primary { width: 100%; }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
+
+/* ═══ การแสดงผลบนอุปกรณ์เคลื่อนที่ ═══ */
+@media (max-width: 768px) {
+  .play-layout {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .play-sidebar {
+    gap: 16px;
+  }
+
+  .stage {
+    aspect-ratio: 4 / 3;
+    border-radius: 16px;
+  }
+
+  .counter-number-wrapper {
+    width: 100px;
+    height: 100px;
+  }
+  .counter-number {
+    font-size: 3.5rem;
+  }
+  
+  .container {
+    padding: 20px 12px;
+  }
+  h1 { 
+    font-size: 2.1rem; 
+  }
+}
+
+/* ═══ UI ส่วนเสริมสำหรับ Phase 1: Game Loop, Timer & Modal ═══ */
+
+/* Countdown Overlay ทับจอวิดีโอ */
+.countdown-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(11, 10, 18, 0.75);
+  backdrop-filter: blur(8px);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease-out;
+}
+.countdown-overlay span {
+  font-size: 8rem;
+  font-weight: 800;
+  color: var(--accent);
+  text-shadow: 0 0 40px var(--accent-glow);
+  animation: countdownPop 0.8s ease-in-out infinite;
+}
+@keyframes countdownPop {
+  0% { transform: scale(0.5); opacity: 0; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); opacity: 0; }
+}
+
+/* แถบเวลา (Timer Bar) */
+.timer-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.timer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.timer-label {
+  font-size: 0.85rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.timer-seconds {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--accent2);
+}
+.timer-bar-bg {
+  width: 100%;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.timer-bar-fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, var(--accent2) 0%, var(--accent) 100%);
+  transition: width 0.1s linear;
+  box-shadow: 0 0 10px var(--accent2-glow);
+}
+.timer-bar-fill.warning {
+  background: linear-gradient(90deg, var(--accent) 0%, var(--danger) 100%);
+  box-shadow: 0 0 10px var(--danger-glow);
+}
+
+/* Modal สรุปผลการเล่น */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(11, 10, 18, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.modal-card {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 24px;
+  padding: 32px;
+  max-width: 480px;
+  width: 100%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+  text-align: center;
+}
+.modal-title {
+  font-size: 2rem;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+.modal-subtitle {
+  color: var(--muted);
+  font-size: 0.95rem;
+  margin-bottom: 24px;
+}
+
+.summary-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.stat-box {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 14px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.stat-box.accent {
+  border-color: var(--accent);
+  background: rgba(255, 214, 10, 0.05);
+}
+.stat-value {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #fff;
+}
+.stat-box.accent .stat-value {
+  color: var(--accent);
+}
+.stat-label {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+/* ฟอร์มบันทึกคะแนน */
+.save-score-section {
+  text-align: left;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 16px;
+  padding: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+.save-score-section h3 {
+  font-size: 1.1rem;
+  color: #fff;
+  margin-bottom: 14px;
+}
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.input-group label {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.input-group input[type="text"],
+.input-group input[type="password"],
+.input-group input[type="email"],
+.modal-card input[type="text"],
+.modal-card input[type="password"],
+.modal-card input[type="email"] {
+  background: rgba(15, 23, 42, 0.9) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 10px !important;
+  padding: 12px 14px !important;
+  color: #fff !important;
+  font-family: inherit !important;
+  font-size: 0.95rem !important;
+  outline: none !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  transition: border-color 0.2s, box-shadow 0.2s !important;
+}
+.input-group input:focus,
+.modal-card input:focus {
+  border-color: var(--accent2) !important;
+  box-shadow: 0 0 10px var(--accent2-glow) !important;
+}
+
+.auth-optional-box {
+  margin: 12px 0;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+}
+.checkbox-label {
+  font-size: 0.85rem;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+.modal-actions .btn {
+  flex: 1;
+  padding: 12px;
+  font-size: 1rem;
+}
+

@@ -7,14 +7,34 @@
   <link rel="stylesheet" href="../css/style.css" />
 </head>
 <body>
-  <div class="container">
-    <h1 style="font-size:1.5rem">DANCE <span class="accent">DETECTOR</span></h1>
+  <div class="container container-wide">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <h1 style="font-size:1.5rem; margin:0;">DANCE <span class="accent">DETECTOR</span></h1>
+      
+      <div id="user-session-bar">
+        <div id="session-logged-out">
+          <button class="btn btn-secondary" id="btn-show-login" style="padding:6px 14px; font-size:0.85rem;">🔑 เข้าสู่ระบบ</button>
+        </div>
+        <div id="session-logged-in" class="hidden" style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:0.88rem; color:var(--text);">👤 สวัสดี, <strong id="logged-user-name" style="color:var(--accent);">User</strong></span>
+          <button class="btn btn-secondary" id="btn-logout" style="padding:4px 8px; font-size:0.75rem; background:rgba(239, 68, 68, 0.2); color:#ef4444; border-color:#ef4444;">ออกจากระบบ</button>
+        </div>
+      </div>
+    </div>
 
     <!-- ═══ สถานะ 1: ก่อนขอกล้อง — ข้อความความเป็นส่วนตัวต้องเห็นก่อนกด ═══ -->
     <section id="s-consent">
       <div class="privacy-note">
         🔒 ภาพจากกล้องประมวลผลบนเครื่องของคุณทั้งหมด<br />
         <strong>ไม่มีการบันทึกหรือส่งวิดีโอออกจากเครื่องเด็ดขาด</strong>
+      </div>
+      <div class="card" style="margin: 16px 0; padding: 14px 16px; text-align: left;">
+        <label for="pose-select-init" style="font-size:0.9rem; font-weight:700; color:var(--accent); display:block; margin-bottom:6px;">🎯 เลือกท่าทางที่ต้องการเล่น:</label>
+        <select id="pose-select-init" style="width:100%; padding:10px 12px; border-radius:8px; border:2px solid var(--accent); background:var(--card-bg); color:var(--text); font-size:1rem; font-weight:700; cursor:pointer;">
+          <option value="dab">🙅 Dab Challenge</option>
+          <option value="six_seven">🔢 Six-Seven Dance</option>
+          <option value="scuba">🤿 Scuba Diver</option>
+        </select>
       </div>
       <p class="notice" id="mobile-hint" style="display:none">
         📱 วางมือถือพิงอะไรสักอย่าง แล้วถอยห่างประมาณ 2 เมตร ให้เห็นตัวครึ่งบนขึ้นไป
@@ -46,37 +66,179 @@
 
     <!-- ═══ สถานะ 4: กล้องทำงาน — โครงกระดูก + ตรวจ Dab สด ═══ -->
     <section id="s-play" class="hidden">
-      <div class="stage">
-        <video id="video" playsinline muted autoplay></video>
-        <canvas id="canvas"></canvas>
+      <div class="play-layout">
+        <!-- ฝั่งซ้าย: หน้าจอแสดงผลกล้องและกระดูก -->
+        <div class="play-main">
+          <div class="stage">
+            <video id="video" playsinline muted autoplay></video>
+            <canvas id="canvas"></canvas>
 
-        <div class="overlay top">
-          <span class="badge" id="status-badge">ยืนให้เห็นตัวครึ่งบนในเฟรม</span>
-        </div>
-        <div class="overlay bottom">
-          <span class="live-score" id="live-score">0</span>
+            <!-- Countdown Overlay ก่อนเริ่มเกม -->
+            <div id="countdown-overlay" class="countdown-overlay hidden">
+              <span id="countdown-num">3</span>
+            </div>
+
+            <!-- ป้ายคำแนะนำและข้อมูลที่ทับอยู่บนหน้าจอ -->
+            <div class="overlay top">
+              <span class="badge" id="status-badge">ยืนให้เห็นตัวครึ่งบนในเฟรม</span>
+            </div>
+            
+            <div class="overlay top-right">
+              <div class="live-score-pill">
+                <span class="pill-label">คะแนนท่า</span>
+                <span class="live-score" id="live-score">0</span>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <!-- Debug Panel — ค่าจริงสำหรับจูนเกณฑ์ใน config.js (Phase 3) -->
-        <div class="debug-panel" id="debug-panel">
-          <h4>DEBUG</h4>
-          <div id="dbg-body">รอ landmark…</div>
-          <button id="btn-save-pose" style="margin-top:6px;font-size:0.7rem">💾 บันทึกท่านี้เป็น JSON</button>
+        <!-- ฝั่งขวา: การแสดงผลการนับแต้ม จับเวลา และปุ่มควบคุม -->
+        <div class="play-sidebar">
+          <!-- เลือกท่าทางที่ต้องการเล่น -->
+          <div class="card" style="margin-bottom: 12px; padding: 12px 16px;">
+            <label for="pose-select" style="font-size:0.85rem; font-weight:700; color:var(--accent); display:block; margin-bottom:6px;">🎯 ท่าทางที่ต้องการเล่น:</label>
+            <select id="pose-select" style="width:100%; padding:10px 12px; border-radius:8px; border:2px solid var(--accent); background:var(--card-bg); color:var(--text); font-size:1rem; font-weight:700; cursor:pointer;">
+              <option value="dab">🙅 Dab Challenge</option>
+              <option value="six_seven">🔢 Six-Seven Dance</option>
+              <option value="scuba">🤿 Scuba Diver</option>
+            </select>
+            <div id="pose-active-tag" style="margin-top:8px; padding:6px 10px; background:rgba(16, 185, 129, 0.15); border:1px solid #10b981; border-radius:6px; font-size:0.85rem; color:#10b981; font-weight:bold; text-align:center;">
+              📌 กำลังเล่นท่า: <span id="pose-active-name">Dab Challenge</span> (<span id="pose-active-key">dab</span>)
+            </div>
+          </div>
+
+          <div class="card status-card">
+            <!-- Game Timer Bar -->
+            <div class="timer-container">
+              <div class="timer-header">
+                <span class="timer-label">⏱️ เวลาเหลือ</span>
+                <span class="timer-seconds" id="timer-seconds">20s</span>
+              </div>
+              <div class="timer-bar-bg">
+                <div class="timer-bar-fill" id="timer-bar-fill"></div>
+              </div>
+            </div>
+
+            <div class="counter-display" style="margin-top: 16px;">
+              <span class="counter-label">นับได้</span>
+              <div class="counter-number-wrapper">
+                <span class="counter-number" id="dab-count">0</span>
+              </div>
+              <span class="counter-label">ครั้ง</span>
+            </div>
+            <button class="btn btn-primary" id="btn-start-game" style="width: 100%; margin-top: 8px;">🔥 เริ่มเล่น (20 วินาที)</button>
+            <p class="notice play-instructions" id="play-instructions">กดปุ่มเริ่มเล่นเพื่อเริ่มนับถอยหลังและจับเวลา</p>
+          </div>
+
+          <!-- แถวปุ่มควบคุม -->
+          <div class="controls-card">
+            <button class="btn btn-toggle-debug" id="btn-toggle-debug">⚙️ แสดงดีบั๊ก</button>
+            <a class="btn btn-quit-game" href="../index.html" id="btn-quit">ออก</a>
+          </div>
+
+          <!-- แผงดีบั๊กแบบพับได้ (ซ่อนเป็นค่าเริ่มต้น) -->
+          <div class="debug-panel hidden-debug" id="debug-panel">
+            <div class="debug-header">
+              <h4>DEBUG LOG</h4>
+              <button id="btn-save-pose" class="btn-mini">💾 บันทึกท่า (.json)</button>
+            </div>
+            <div id="dbg-body" class="debug-body">รอ landmark…</div>
+          </div>
         </div>
       </div>
-
-      <div class="card">
-        <p>นับได้ <strong id="dab-count" style="color:var(--accent);font-size:1.6rem">0</strong> ครั้ง</p>
-        <p class="notice">ทำท่า Dab แล้วกลับท่ายืนปกติ ถึงจะนับครั้งต่อไป</p>
-      </div>
-      <p><a class="btn btn-secondary" href="../index.html" id="btn-quit">ออก</a></p>
     </section>
+
+    <!-- ═══ Modal เข้าสู่ระบบ (Login) ═══ -->
+    <div id="modal-login" class="modal-backdrop hidden">
+      <div class="modal-card" style="max-width: 400px;">
+        <h2 class="modal-title">🔑 เข้าสู่ระบบ</h2>
+        <p class="modal-subtitle">กรอก Username และ Password เพื่อใช้งานบัญชีเดิม</p>
+        <form id="form-login" onsubmit="return false;">
+          <div class="input-group" style="text-align: left;">
+            <label for="login-username">👤 Username / ไอดีล็อกอิน</label>
+            <input type="text" id="login-username" placeholder="ใส่ Username" required />
+          </div>
+          <div class="input-group" style="text-align: left; margin-top: 10px;">
+            <label for="login-password">🔑 Password / รหัสผ่าน</label>
+            <input type="password" id="login-password" placeholder="ใส่รหัสผ่าน" required />
+          </div>
+          <div id="login-msg" class="notice" style="margin-top: 8px;"></div>
+          <div class="modal-actions" style="margin-top: 16px;">
+            <button type="submit" class="btn btn-primary" id="btn-submit-login" style="width: 100%;">เข้าสู่ระบบ</button>
+            <button type="button" class="btn btn-secondary" id="btn-close-login">ยกเลิก</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ═══ Modal สรุปผลคะแนนเมื่อจบเกม ═══ -->
+    <div id="modal-summary" class="modal-backdrop hidden">
+      <div class="modal-card">
+        <h2 class="modal-title">🎉 หมดเวลา! 🎉</h2>
+        <p class="modal-subtitle">สรุปผลการเล่นของคุณ</p>
+
+        <div class="summary-stats">
+          <div class="stat-box">
+            <span class="stat-value" id="res-count">0</span>
+            <span class="stat-label">จำนวนครั้ง</span>
+          </div>
+          <div class="stat-box accent">
+            <span class="stat-value" id="res-score">0</span>
+            <span class="stat-label">คะแนนรวม</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-value" id="res-avg">0</span>
+            <span class="stat-label">คะแนนเฉลี่ย/ครั้ง</span>
+          </div>
+        </div>
+
+        <div class="save-score-section">
+          <h3>🏆 บันทึกคะแนนเข้า Leaderboard</h3>
+          <form id="form-save-score" onsubmit="return false;">
+            <div id="logged-in-notice" class="hidden" style="margin-bottom: 12px; padding: 10px; background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; border-radius: 8px; font-size: 0.88rem; color: #10b981; font-weight: bold; text-align: center;">
+              🟢 ล็อกอินบันทึกคะแนนอัตโนมัติในชื่อ: <span id="logged-in-user-tag">User</span>
+            </div>
+
+            <div class="input-group">
+              <label for="input-display-name">🏷️ ชื่อโชว์บน Leaderboard / Display Name <small style="color:var(--accent);">(เปลี่ยนได้ตลอดเวลา)</small></label>
+              <input type="text" id="input-display-name" placeholder="ใส่ชื่อหรือฉายาที่ต้องการโชว์ในตาราง" required maxlength="30" />
+            </div>
+
+            <!-- ตัวเลือกในการล็อกอินหรือลงทะเบียนถ้าต้องการ -->
+            <div class="auth-optional-box" id="auth-optional-box">
+              <label class="checkbox-label">
+                <input type="checkbox" id="chk-upgrade-account" />
+                🔑 สมัครสมาชิกถาวรด้วย Username & Password
+              </label>
+              <div id="password-field-group" class="input-group hidden" style="margin-top: 10px;">
+                <label for="input-username" style="font-size:0.8rem; font-weight:bold; color:var(--text-muted); display:block; margin-bottom:4px;">👤 Username / ไอดีล็อกอิน <small style="color:#ef4444;">(ภาษาอังกฤษ/ตัวเลข — ตั้งแล้วเปลี่ยนไม่ได้)</small></label>
+                <input type="text" id="input-username" placeholder="ตั้งชื่อ Username เช่น john_doe99" style="margin-bottom: 8px;" />
+                
+                <label for="input-password" style="font-size:0.8rem; font-weight:bold; color:var(--text-muted); display:block; margin-bottom:4px;">🔑 Password / รหัสผ่าน</label>
+                <input type="password" id="input-password" placeholder="ตั้งรหัสผ่าน (อย่างน้อย 6 ตัวอักษร)" minlength="6" style="margin-bottom: 8px;" />
+                
+                <label for="input-email" style="font-size:0.8rem; font-weight:bold; color:var(--text-muted); display:block; margin-bottom:4px;">📧 Email / อีเมล <small>(ไม่บังคับ)</small></label>
+                <input type="email" id="input-email" placeholder="อีเมล เช่น user@example.com" />
+              </div>
+            </div>
+
+            <div class="modal-actions">
+              <button type="submit" class="btn btn-primary" id="btn-submit-score">💾 บันทึกคะแนน</button>
+              <button type="button" class="btn btn-secondary" id="btn-replay">🔄 เล่นอีกครั้ง</button>
+            </div>
+          </form>
+          <div id="save-status-msg" class="notice" style="margin-top: 10px;"></div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script type="module">
     import { CFG } from "../js/config.js";
     import { preloadModel, startCamera, stopCamera, startDetectLoop, drawSkeleton } from "../js/pose.js";
-    import { scoreDab, createSmoother, createDabCounter, LM, angle, dist } from "../js/dab.js";
+    import { createSmoother, angle, dist } from "../js/dab.js";
+    import { evaluatePose, createPoseCounter, LM } from "../js/poses.js";
+    import { submitScore, registerUser, loginUser, getSavedSession, saveSession, clearSession } from "../js/api.js";
 
     const $ = (id) => document.getElementById(id);
     const sections = ["s-consent", "s-loading", "s-error", "s-play"];
@@ -89,18 +251,90 @@
     const canvas = $("canvas");
     let stopLoop = null;
     let lastLandmarks = null;
+    let currentPoseKey = $("pose-select")?.value || $("pose-select-init")?.value || "dab";
+
+    // ── Auth & Session Management ──
+    function updateAuthUI() {
+      const session = getSavedSession();
+      if (session && session.user) {
+        if ($("session-logged-out")) $("session-logged-out").classList.add("hidden");
+        if ($("session-logged-in")) {
+          $("session-logged-in").classList.remove("hidden");
+          if ($("logged-user-name")) $("logged-user-name").textContent = session.user.display_name || session.user.username;
+        }
+        if ($("input-display-name") && !$("input-display-name").value) {
+          $("input-display-name").value = session.user.display_name || "";
+        }
+        if ($("auth-optional-box")) $("auth-optional-box").classList.add("hidden");
+        if ($("logged-in-notice")) {
+          $("logged-in-notice").classList.remove("hidden");
+          if ($("logged-in-user-tag")) $("logged-in-user-tag").textContent = `${session.user.display_name || session.user.username} (@${session.user.username})`;
+        }
+      } else {
+        if ($("session-logged-out")) $("session-logged-out").classList.remove("hidden");
+        if ($("session-logged-in")) $("session-logged-in").classList.add("hidden");
+        if ($("auth-optional-box")) $("auth-optional-box").classList.remove("hidden");
+        if ($("logged-in-notice")) $("logged-in-notice").classList.add("hidden");
+      }
+    }
+
+    $("btn-show-login")?.addEventListener("click", () => {
+      $("modal-login")?.classList.remove("hidden");
+    });
+
+    $("btn-close-login")?.addEventListener("click", () => {
+      $("modal-login")?.classList.add("hidden");
+    });
+
+    $("btn-logout")?.addEventListener("click", () => {
+      clearSession();
+      updateAuthUI();
+    });
+
+    $("form-login")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const uname = $("login-username")?.value?.trim();
+      const pass = $("login-password")?.value?.trim();
+      if (!uname || !pass) return;
+
+      $("login-msg").textContent = "⏳ กำลังเข้าสู่ระบบ…";
+      $("btn-submit-login").disabled = true;
+
+      try {
+        const res = await loginUser(uname, pass);
+        $("login-msg").textContent = "✅ เข้าสู่ระบบสำเร็จ!";
+        updateAuthUI();
+        setTimeout(() => {
+          $("modal-login")?.classList.add("hidden");
+          $("login-msg").textContent = "";
+          $("btn-submit-login").disabled = false;
+        }, 600);
+      } catch (err) {
+        $("login-msg").textContent = `❌ ${err.message}`;
+        $("btn-submit-login").disabled = false;
+      }
+    });
+
+    updateAuthUI();
+
+    // ── Game State Variables ──
+    let isGameRunning = false;
+    let gameTimer = null;
+    let timeLeft = 20;
+    let currentDabCount = 0;
+    let scoreHistory = [];
 
     // ── แปลง error ของ getUserMedia เป็นข้อความที่คนทั่วไปเข้าใจ ──
     const ERROR_TEXT = {
       NotAllowedError: {
-        title: "คุณยังไม่ได้อนุญาตให้ใช้กล้อง",
-        detail: "เกมนี้จำเป็นต้องใช้กล้องเพื่อตรวจจับท่าทาง (ภาพไม่ถูกส่งออกจากเครื่อง)",
-        steps: ["กดไอคอน 🔒 หรือ 🎥 ข้างช่อง URL", "เปลี่ยนสิทธิ์กล้องเป็น \"อนุญาต\"", "กดปุ่มลองใหม่ด้านล่าง"],
+        title: "ไม่อนุญาตให้ใช้กล้อง",
+        detail: "เบราว์เซอร์ถูกปฏิเสธการเข้าถึงกล้อง",
+        steps: ["กดรูปแม่กุญแจ 🔒 หน้า URL แล้วเลือก 'อนุญาตใช้กล้อง'", "รีเฟรชหน้าเว็บ"],
       },
       NotFoundError: {
-        title: "ไม่พบกล้องในเครื่องนี้",
-        detail: "เครื่องนี้อาจไม่มีกล้อง หรือกล้องถูกปิดการใช้งานอยู่",
-        steps: ["ตรวจว่ากล้องเสียบ/เปิดอยู่", "ลองเปิดจากมือถือหรือเครื่องที่มีกล้องแทน"],
+        title: "ไม่พบกล้องในเครื่อง",
+        detail: "ระบบไม่พบอุปกรณ์กล้องเว็บบอร์ดหรือกล้องมือถือ",
+        steps: ["เสียบกล้องให้เรียบร้อย", "ลองกดเปลี่ยนกล้องในเมนูตั้งค่าเบราว์เซอร์"],
       },
       NotReadableError: {
         title: "กล้องถูกโปรแกรมอื่นใช้งานอยู่",
@@ -118,15 +352,44 @@
       show("s-error");
     }
 
+    function switchPose(newKey) {
+      currentPoseKey = newKey || $("pose-select")?.value || $("pose-select-init")?.value || "dab";
+      
+      // Sync ค่าทั้งสอง Dropdown ให้ตรงกันเสมอ
+      if ($("pose-select") && $("pose-select").value !== currentPoseKey) {
+        $("pose-select").value = currentPoseKey;
+      }
+      if ($("pose-select-init") && $("pose-select-init").value !== currentPoseKey) {
+        $("pose-select-init").value = currentPoseKey;
+      }
+
+      const poseObj = CFG.POSES?.[currentPoseKey];
+      const poseName = poseObj?.name ?? currentPoseKey;
+
+      console.log("🔄 [Pose Switch Triggered] Key:", currentPoseKey, "| Name:", poseName);
+
+      // อัปเดตแท็กแสดงผลบน UI สดๆ ทันที
+      if ($("pose-active-name")) $("pose-active-name").textContent = poseName;
+      if ($("pose-active-key")) $("pose-active-key").textContent = currentPoseKey;
+      if ($("play-instructions")) $("play-instructions").textContent = `🔥 ทำท่า ${poseName} ให้เร็วและต่อเนื่องที่สุด!`;
+
+      if (stopLoop) {
+        stopLoop();
+        runDetection();
+      }
+    }
+
     // ── เริ่มกล้อง + โมเดล (เรียกหลังกดปุ่มเท่านั้น) ──
     async function boot() {
       show("s-loading");
       try {
+        const initKey = $("pose-select-init")?.value || $("pose-select")?.value || "dab";
+        console.log("🎥 [Camera Booting] Selected pose key:", initKey);
+        switchPose(initKey);
         $("loading-msg").textContent = "กำลังโหลดโมเดล AI…";
         const { delegate } = await preloadModel();
         $("loading-msg").textContent = "กำลังเปิดกล้อง…";
         await startCamera(video);
-        // canvas ต้องเท่าขนาดวิดีโอจริง ไม่ใช่ขนาด CSS ไม่งั้นโครงกระดูกเบี้ยว
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         show("s-play");
@@ -142,12 +405,40 @@
     $("btn-retry").addEventListener("click", boot);
     $("btn-quit").addEventListener("click", () => stop());
     window.addEventListener("pagehide", () => stop());
-    function stop() { stopLoop?.(); stopCamera(video); }
+    function stop() { stopGameTimer(); stopLoop?.(); stopCamera(video); }
+
+    // ── สลับท่าทางเมื่อเปลี่ยน Dropdown (รองรับทั้ง 2 จุด) ──
+    $("pose-select-init")?.addEventListener("change", (e) => {
+      console.log("🎯 [Initial Dropdown Change] User selected:", e.target.value);
+      switchPose(e.target.value);
+    });
+
+    $("pose-select")?.addEventListener("change", (e) => {
+      console.log("🎯 [Sidebar Dropdown Change] User selected:", e.target.value);
+      switchPose(e.target.value);
+    });
+
+    // ── เปิด/ปิด Debug Panel ──
+    const btnToggleDebug = $("btn-toggle-debug");
+    if (btnToggleDebug) {
+      btnToggleDebug.addEventListener("click", () => {
+        const isHidden = $("debug-panel").classList.toggle("hidden-debug");
+        btnToggleDebug.classList.toggle("active", !isHidden);
+      });
+    }
+
+    // ── UI Checkbox Upgrade Account Toggle ──
+    $("chk-upgrade-account")?.addEventListener("change", (e) => {
+      $("password-field-group")?.classList.toggle("hidden", !e.target.checked);
+    });
+
+    let activeCounter = null;
 
     // ── ลูปตรวจจับ + ให้คะแนน + นับครั้ง ──
     function runDetection() {
       const smooth = createSmoother();
-      const counter = createDabCounter();
+      activeCounter = createPoseCounter(currentPoseKey);
+      const poseCfg = CFG.POSES?.[currentPoseKey] ?? CFG.POSES?.dab ?? { enterScore: 75, name: "Pose" };
 
       stopLoop = startDetectLoop(video, (lm, fps) => {
         lastLandmarks = lm;
@@ -158,48 +449,208 @@
           return;
         }
 
-        const result = scoreDab(lm);
+        const result = evaluatePose(currentPoseKey, lm);
         const smoothed = smooth(result.valid ? result.total : 0);
 
         drawSkeleton(canvas, lm, smoothed);
         $("live-score").textContent = Math.round(smoothed);
 
-        const { count } = counter.update(smoothed);
-        $("dab-count").textContent = count;
+        // นับครั้งเฉพาะตอนที่อยู่ในโหมดเล่นเกมจริง (isGameRunning)
+        if (isGameRunning && activeCounter) {
+          const { count, counted } = activeCounter.update(smoothed, result);
+          currentDabCount = count;
+          const countEl = $("dab-count");
+          countEl.textContent = count;
+          if (counted) {
+            scoreHistory.push(Math.round(smoothed));
+            countEl.classList.remove("pulse-active");
+            void countEl.offsetWidth; // trigger reflow
+            countEl.classList.add("pulse-active");
+          }
+        }
 
         if (!result.valid) {
           $("status-badge").textContent = "ขยับให้เห็นตัวมากขึ้น / เพิ่มแสง";
           $("status-badge").className = "badge warn";
-        } else if (smoothed >= CFG.DAB_ENTER) {
-          $("status-badge").textContent = "DAB! 🔥";
+        } else if (smoothed >= poseCfg.enterScore) {
+          $("status-badge").textContent = `${poseCfg.name}! 🔥`;
           $("status-badge").className = "badge ok";
         } else {
-          $("status-badge").textContent = "พร้อม — ทำท่า Dab เลย!";
+          $("status-badge").textContent = isGameRunning ? `ลุยเลย! ทำท่า ${poseCfg.name} ให้เร็วที่สุด` : "พร้อมแล้ว กดปุ่ม 'เริ่มเล่น'";
           $("status-badge").className = "badge";
         }
 
-        updateDebug(lm, result, fps);
+        updateDebug(lm, result, fps, currentPoseKey);
       });
     }
 
+    // ── GAME LOOP: นับถอยหลัง 3-2-1 และจับเวลา 20 วินาที ──
+    $("btn-start-game").addEventListener("click", () => {
+      if (isGameRunning) return;
+      startCountdown();
+    });
+
+    function startCountdown() {
+      const overlay = $("countdown-overlay");
+      const numEl = $("countdown-num");
+      overlay.classList.remove("hidden");
+      let count = 3;
+      numEl.textContent = count;
+
+      const cdInterval = setInterval(() => {
+        count--;
+        if (count > 0) {
+          numEl.textContent = count;
+        } else if (count === 0) {
+          numEl.textContent = "GO!";
+        } else {
+          clearInterval(cdInterval);
+          overlay.classList.add("hidden");
+          startGameLoop();
+        }
+      }, 1000);
+    }
+
+    function startGameLoop() {
+      currentPoseKey = $("pose-select")?.value || currentPoseKey || "dab";
+      console.log("🎮 [Start Game Loop] Active pose key:", currentPoseKey);
+      isGameRunning = true;
+      timeLeft = 20;
+      currentDabCount = 0;
+      scoreHistory = [];
+      if ($("pose-select")) $("pose-select").disabled = true;
+      if (activeCounter && typeof activeCounter.reset === "function") {
+        activeCounter.reset();
+      }
+      $("dab-count").textContent = "0";
+      $("btn-start-game").disabled = true;
+      $("btn-start-game").textContent = "กำลังเล่น…";
+      $("play-instructions").textContent = `🔥 ทำท่า ${CFG.POSES?.[currentPoseKey]?.name ?? "เต้น"} ให้เร็วและต่อเนื่องที่สุด!`;
+
+      updateTimerUI();
+
+      gameTimer = setInterval(() => {
+        timeLeft--;
+        updateTimerUI();
+        if (timeLeft <= 0) {
+          endGame();
+        }
+      }, 1000);
+    }
+
+    function updateTimerUI() {
+      $("timer-seconds").textContent = `${timeLeft}s`;
+      const fillPct = (timeLeft / 20) * 100;
+      const fillEl = $("timer-bar-fill");
+      fillEl.style.width = `${fillPct}%`;
+      fillEl.classList.toggle("warning", timeLeft <= 5);
+    }
+
+    function stopGameTimer() {
+      if (gameTimer) clearInterval(gameTimer);
+      isGameRunning = false;
+      if ($("pose-select")) $("pose-select").disabled = false;
+      $("btn-start-game").disabled = false;
+      $("btn-start-game").textContent = "🔥 เริ่มเล่นอีกครั้ง (20 วินาที)";
+    }
+
+    function endGame() {
+      stopGameTimer();
+      updateAuthUI();
+      
+      // คำนวณคะแนนรวมและเฉลี่ย
+      const totalScore = scoreHistory.reduce((a, b) => a + b, 0);
+      const avgScore = currentDabCount > 0 ? Math.round(totalScore / currentDabCount) : 0;
+
+      $("res-count").textContent = currentDabCount;
+      $("res-score").textContent = totalScore;
+      $("res-avg").textContent = avgScore;
+
+      // แสดง Modal สรุปผล
+      $("modal-summary").classList.remove("hidden");
+    }
+
+    $("btn-replay").addEventListener("click", () => {
+      $("modal-summary").classList.add("hidden");
+      startCountdown();
+    });
+
+    $("form-save-score").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const session = getSavedSession();
+      const displayName = $("input-display-name").value.trim();
+      if (!displayName) return;
+
+      const isUpgrade = session ? false : $("chk-upgrade-account")?.checked;
+      const rawUsername = session ? session.user.username : $("input-username")?.value?.trim();
+      const password = session ? null : $("input-password")?.value?.trim();
+      const email = session ? session.user.email : ($("input-email")?.value?.trim() || null);
+
+      const totalScore = scoreHistory.reduce((a, b) => a + b, 0);
+      const activePoseKey = $("pose-select")?.value || currentPoseKey || "dab";
+      const cleanUsername = rawUsername ? rawUsername.toLowerCase().replace(/\s+/g, "") : null;
+
+      console.log("📤 [Form Submit Score] Submitting score for pose:", activePoseKey, "| Player:", displayName, "| Username:", cleanUsername, "| Email:", email);
+
+      $("save-status-msg").textContent = "⏳ กำลังบันทึกคะแนนเข้าสู่ระบบ…";
+      $("btn-submit-score").disabled = true;
+      
+      try {
+        if (isUpgrade && password) {
+          if (!cleanUsername) {
+            throw new Error("กรุณากรอก Username สำหรับสมัครสมาชิกถาวร");
+          }
+          await registerUser(cleanUsername, password, displayName, email);
+        }
+
+        const totalScoreRounded = Math.round(totalScore);
+        const avgScore = currentDabCount > 0 ? Math.round(totalScore / currentDabCount) : 0;
+
+        const res = await submitScore({
+          display_name: displayName,
+          username: cleanUsername,
+          email: email,
+          score: totalScoreRounded,
+          count: currentDabCount,
+          pose_key: activePoseKey,
+          pose_accuracy_details: { avg_accuracy: avgScore },
+          password: (isUpgrade && password) ? password : null
+        });
+
+        sessionStorage.setItem("myScoreId", res.id);
+        $("save-status-msg").textContent = "✅ บันทึกคะแนนสำเร็จ!";
+        
+        setTimeout(() => {
+          window.location.href = "leaderboard.html";
+        }, 1000);
+      } catch (err) {
+        $("save-status-msg").textContent = `❌ ${err.message}`;
+        $("btn-submit-score").disabled = false;
+      }
+    });
+
     // ── Debug Panel: ค่าจริงที่ใช้จูน config.js ──
-    function updateDebug(lm, result, fps) {
+    function updateDebug(lm, result, fps, poseKey = "dab") {
       const sw = dist(lm[LM.L_SHOULDER], lm[LM.R_SHOULDER]);
       const elbowL = angle(lm[LM.L_SHOULDER], lm[LM.L_ELBOW], lm[LM.L_WRIST]);
       const elbowR = angle(lm[LM.R_SHOULDER], lm[LM.R_ELBOW], lm[LM.R_WRIST]);
       const noseL = dist(lm[LM.L_WRIST], lm[LM.NOSE]) / sw;
       const noseR = dist(lm[LM.R_WRIST], lm[LM.NOSE]) / sw;
       const p = result.parts;
-      $("dbg-body").innerHTML = [
-        `ศอก L: ${elbowL.toFixed(0)}°  R: ${elbowR.toFixed(0)}°`,
-        `มือ-จมูก/ไหล่ L: ${noseL.toFixed(2)}  R: ${noseR.toFixed(2)}`,
-        p ? `str:${(p.straight*100).toFixed(0)} rai:${(p.raised*100).toFixed(0)} ben:${(p.bend*100).toFixed(0)}` : "-",
-        p ? `tuc:${(p.tuck*100).toFixed(0)} ali:${(p.align*100).toFixed(0)} side:${result.side ?? "-"}` : "-",
-        `fps: ${fps}`,
-      ].join("<br/>");
+      const poseName = CFG.POSES[poseKey]?.name ?? poseKey;
+
+      const lines = [
+        `<strong>ท่าปัจจุบัน:</strong> ${poseName}`,
+        `ศอก L: ${elbowL.toFixed(0)}° | R: ${elbowR.toFixed(0)}°`,
+        `มือ-จมูก/ไหล่ L: ${noseL.toFixed(2)} | R: ${noseR.toFixed(2)}`,
+        p ? `คะแนนย่อย: ${Object.entries(p).map(([k, v]) => `${k}:${(v*100).toFixed(0)}%`).join(" ")}` : "คะแนนย่อย: -",
+        `ฝั่งที่ตรวจจับได้: ${result.side ?? "-"} | FPS: ${fps}`,
+      ];
+
+      $("dbg-body").innerHTML = lines.join("<br/>");
     }
 
-    // ── ปุ่มบันทึก landmark เป็น JSON — เก็บไว้ทดสอบสูตรโดยไม่ต้องเปิดกล้อง ──
+    // ── ปุ่มบันทึก landmark เป็น JSON ──
     $("btn-save-pose").addEventListener("click", () => {
       if (!lastLandmarks) return alert("ยังไม่มี landmark");
       const data = JSON.stringify(

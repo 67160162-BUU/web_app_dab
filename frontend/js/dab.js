@@ -43,7 +43,10 @@ function visible(lm, ...ids) {
 
 // คำนวณคะแนนของ "ด้านเดียว": straightSide = ด้านที่แขนเหยียด, bendSide = ด้านที่แขนพับ
 function scoreSide(lm, s) {
-  const { A, D, W } = { A: CFG.ANGLE, D: CFG.DIST, W: CFG.WEIGHTS };
+  const pCfg = CFG.POSES?.dab;
+  const A = pCfg?.ANGLE ?? CFG.ANGLE;
+  const D = pCfg?.DIST ?? CFG.DIST;
+  const W = pCfg?.WEIGHTS ?? CFG.WEIGHTS;
   const shoulderW = dist(lm[LM.L_SHOULDER], lm[LM.R_SHOULDER]);
   if (shoulderW === 0) return null;
 

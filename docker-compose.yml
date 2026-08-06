@@ -1,0 +1,36 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: dance_detector_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: dance_detector
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./backend/database/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
+      - ./backend/database/seed.sql:/docker-entrypoint-initdb.d/02_seed.sql
+
+  web:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: dance_detector_web
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      DB_HOST: db
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_PORT: 3306
+      DB_NAME: dance_detector
+    depends_on:
+      - db
+    volumes:
+      - ./frontend:/frontend
+
+volumes:
+  db_data:

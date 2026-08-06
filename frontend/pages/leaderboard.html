@@ -7,43 +7,81 @@
   <link rel="stylesheet" href="../css/style.css" />
 </head>
 <body>
-  <div class="container">
-    <h1 style="font-size:1.6rem">🏆 กระดาน<span class="accent">อันดับ</span></h1>
+  <div class="container" style="max-width: 900px;">
+    <h1 style="font-size:1.8rem; margin-bottom: 6px;">🏆 กระดาน<span class="accent">อันดับ</span></h1>
+    <p class="tagline" style="margin-bottom: 20px;">อันดับคะแนนรวมและจำนวนครั้งสูงสุดในแต่ละท่าทางเต้น</p>
 
-    <div class="card">
-      <div id="board"><div class="spinner"></div></div>
+    <!-- Grid 4 ตารางผู้นำ -->
+    <div id="leaderboards-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 16px;">
+      <div class="card"><div class="spinner"></div></div>
     </div>
 
-    <p><a class="btn btn-primary" href="play.html">เริ่ม DAB</a></p>
-    <p><a class="btn btn-secondary" href="../index.html">กลับหน้าแรก</a></p>
+    <div style="margin: 24px 0; display: flex; flex-direction: column; gap: 12px; align-items: center;">
+      <a class="btn btn-primary" href="play.html" style="width: 100%; max-width: 320px;">🎮 เริ่มเล่นเกม</a>
+      <a class="btn btn-secondary" href="../index.html" style="width: 100%; max-width: 320px;">กลับหน้าแรก</a>
+    </div>
   </div>
 
   <script type="module">
-    import { fetchTopScores } from "../js/api.js";
+    import { fetchLeaderboards } from "../js/api.js";
 
-    const board = document.getElementById("board");
-    // id ของคะแนนที่เพิ่งส่ง (Phase 5 จะเก็บหลัง POST) — ใช้ไฮไลต์แถวตัวเอง
+    const grid = document.getElementById("leaderboards-grid");
     const myId = Number(sessionStorage.getItem("myScoreId"));
 
-    try {
-      const scores = await fetchTopScores(20);
-      if (scores.length === 0) {
-        // Edge Case 11: กระดานว่าง — ชวนเล่น ไม่โชว์ตารางเปล่า
-        board.innerHTML = `<p style="font-size:1.1rem">ยังไม่มีใครกล้า — เป็นคนแรกเลยไหม? 😏</p>`;
-      } else {
-        board.innerHTML = `<table class="board">
-          <tr><th>#</th><th>ชื่อ</th><th style="text-align:right">คะแนน</th><th style="text-align:right">ครั้ง</th></tr>
-          ${scores.map((s, i) => `
-            <tr${s.id === myId ? ' style="outline:2px solid var(--accent);border-radius:6px"' : ""}>
-              <td>${["🥇","🥈","🥉"][i] ?? i + 1}</td>
-              <td>${s.nickname}</td>
-              <td class="score-col">${s.score.toFixed(1)}</td>
-              <td style="text-align:right;color:var(--muted)">${s.dab_count}</td>
-            </tr>`).join("")}
-        </table>`;
+    function renderTable(list, type = "score") {
+      if (!list || list.length === 0) {
+        return `<p class="notice" style="font-size:0.9rem; padding: 12px 0;">ยังไม่มีสถิติ — เป็นคนแรกเลยไหม? 😏</p>`;
       }
+      return `<table class="board">
+        <tr><th>#</th><th>ชื่อผู้เล่น</th><th style="text-align:right">${type === "score" ? "คะแนนรวม" : "จำนวนครั้ง"}</th></tr>
+        ${list.map((s, i) => `
+          <tr${s.id === myId ? ' style="outline:2px solid var(--accent);border-radius:6px;background:rgba(255,214,10,0.15)"' : ""}>
+            <td>${["🥇","🥈","🥉"][i] ?? (i + 1)}</td>
+            <td><strong>${s.nickname}</strong></td>
+            <td style="text-align:right; font-weight:700; color:var(--accent)">
+              ${type === "score" ? Number(s.score).toFixed(0) : `${s.count ?? s.dab_count ?? 0} ครั้ง`}
+            </td>
+          </tr>`).join("")}
+      </table>`;
+    }
+
+    try {
+      const data = await fetchLeaderboards(10);
+      grid.innerHTML = `
+        <!-- ตารางที่ 1: คะแนนรวมสูงสุด -->
+        <div class="card" style="text-align:left;">
+          <h3 style="margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+            <span>🏆</span> คะแนนรวมสูงสุด (Overall Top Scores)
+          </h3>
+          ${renderTable(data.overall, "score")}
+        </div>
+
+        <!-- ตารางที่ 2: ท่า Dab (จำนวนครั้งสูงสุด) -->
+        <div class="card" style="text-align:left;">
+          <h3 style="margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+            <span>🙅</span> Dab Challenge (ครั้งสูงสุด)
+          </h3>
+          ${renderTable(data.dab, "count")}
+        </div>
+
+        <!-- ตารางที่ 3: ท่า Six-Seven (จำนวนครั้งสูงสุด) -->
+        <div class="card" style="text-align:left;">
+          <h3 style="margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+            <span>🔢</span> Six-Seven Dance (ครั้งสูงสุด)
+          </h3>
+          ${renderTable(data.six_seven, "count")}
+        </div>
+
+        <!-- ตารางที่ 4: ท่า Scuba Diver (จำนวนครั้งสูงสุด) -->
+        <div class="card" style="text-align:left;">
+          <h3 style="margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+            <span>🤿</span> Scuba Diver (ครั้งสูงสุด)
+          </h3>
+          ${renderTable(data.scuba, "count")}
+        </div>
+      `;
     } catch {
-      board.innerHTML = `<p class="notice">โหลดอันดับไม่สำเร็จ ลองรีเฟรชอีกครั้ง</p>`;
+      grid.innerHTML = `<div class="card"><p class="notice">โหลดกระดานอันดับไม่สำเร็จ ลองรีเฟรชอีกครั้ง</p></div>`;
     }
   </script>
 </body>
