@@ -34,8 +34,35 @@
   3. ท่า Six-Seven Dance (นับจำนวนครั้งสูงสุด)
   4. ท่า Scuba Diver (นับจำนวนครั้งสูงสุด)
 
-### 5. ระบบสำรองเมื่อไม่มี DB (Offline / Local Storage Fallback)
+### 5. ระบบ Dual Database & phpMyAdmin
+- **รองรับทั้ง PostgreSQL และ MySQL (phpMyAdmin):** สลับใช้งานได้เพียงกำหนดตัวแปร `DB_TYPE=postgres` หรือ `DB_TYPE=mysql`
+- **phpMyAdmin Web UI:** เข้าใช้งาน phpMyAdmin บริหารจัดการ MySQL ได้ทันทีที่ `http://localhost:8080`
+
+### 6. ระบบสำรองเมื่อไม่มี DB (Offline / Local Storage Fallback)
 - หากเปิดเล่นแบบไม่มี Backend / DB รันอยู่ ตัวเกมจะสลับไปใช้ LocalStorage Fallback ใน [api.js](file:///Applications/XAMPP/xamppfiles/htdocs/web_app_dab/frontend/js/api.js) อัตโนมัติ เล่นเกมและบันทึกคะแนนบนเบราว์เซอร์ได้โดยไม่ขึ้น Error หน้าว่าง
+
+---
+
+## REST API Endpoints Specification
+
+### 1. Authentication (สิทธิ์และการเข้าสู่ระบบ)
+- `POST /api/auth/register` — สมัครสมาชิกผู้ใช้งานถาวร
+- `POST /api/auth/login` — เข้าสู่ระบบด้วย Username & Password (คืนค่า JWT Access Token)
+- `POST /api/auth/logout` — ออกจากระบบ
+- `POST /api/auth/change-password` — เปลี่ยนรหัสผ่านผู้ใช้งาน (ต้องการ `old_password` และ `new_password`)
+- `GET /api/auth/check-username/{name}` — ตรวจสอบว่า Username นี้ว่างหรือไม่ (`available: true/false`)
+- `GET /api/auth/me` — ดึงข้อมูลโปรไฟล์ผู้ใช้งานปัจจุบัน
+
+### 2. User Management (จัดการข้อมูลผู้ใช้)
+- `GET /api/users` — ดึงข้อมูลผู้ใช้ทั้งหมดแบบ Pagination (รับพารามิเตอร์ `page`, `limit`, `search`)
+- `GET /api/users/{id}` — ดึงข้อมูลผู้ใช้งานตาม ID
+- `PUT /api/users/{id}` — แก้ไขข้อมูลผู้ใช้ (`display_name`, `email`, `role`, `password`)
+- `DELETE /api/users/{id}` — ลบผู้ใช้งาน
+
+### 3. Scores & Leaderboards
+- `GET /api/scores/top` — ดึงคะแนนสูงสุดตามเงื่อนไข
+- `GET /api/scores/leaderboards` — ดึงทั้ง 4 ตารางผู้นำพร้อมกัน
+- `POST /api/scores/` — บันทึกคะแนนการเล่นเกม
 
 ---
 
@@ -43,22 +70,58 @@
 
 ### วิธีที่ 1: รันด้วย Docker Compose (แนะนำที่สุด)
 
-รันคำสั่งเดียว ระบบจะสร้างทั้ง MySQL 8.0 Database (พร้อมสคริปต์ตารางและ Seed data) + FastAPI Backend Server:
+รันคำสั่งเดียว ระบบจะสร้าง PostgreSQL 15, MySQL 8.0, phpMyAdmin (Port 8080) และ FastAPI Backend Server (Port 8000):
 
 ```bash
 docker compose up --build -d
 ```
 
-เข้าใช้งานเว็บเกมที่:
+- เข้าใช้งานเว็บเกมที่: `http://localhost:8000`
+- เข้าใช้งาน phpMyAdmin บริหารจัดการ MySQL ที่: `http://localhost:8080`
+
+#### การสลับฐานข้อมูลระหว่าง PostgreSQL (ส่งงาน) และ MySQL (phpMyAdmin):
+
+##### วิธีที่ 1: ปรับแก้ในไฟล์ `docker-compose.yml` (แนะนำ)
+ในโซน `web:` -> `environment:` ให้ตั้งค่าดังนี้:
+
+**กรณีสลับใช้ PostgreSQL (ส่งงาน):**
+```yaml
+    environment:
+      DB_TYPE: postgres
+      DB_HOST: db_postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: rootpassword
+      DB_NAME: dance_detector
 ```
-http://localhost:8000
+
+**กรณีสลับใช้ MySQL (สำหรับดูตารางผ่าน phpMyAdmin ที่ http://localhost:8080):**
+```yaml
+    environment:
+      DB_TYPE: mysql
+      DB_HOST: db_mysql
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: rootpassword
+      DB_NAME: dance_detector
 ```
+แล้วรันคำสั่ง `docker compose up -d` ใน Terminal เพื่อให้ Docker อัปเดตฐานข้อมูลใหม่ทันที
+
+##### วิธีที่ 2: รันผ่านคำสั่ง Terminal (ไม่ต้องแก้ไฟล์)
+- **สลับเป็น PostgreSQL:**
+  ```bash
+  DB_TYPE=postgres DB_HOST=db_postgres DB_PORT=5432 DB_USER=postgres docker compose up -d
+  ```
+- **สลับเป็น MySQL:**
+  ```bash
+  DB_TYPE=mysql DB_HOST=db_mysql DB_PORT=3306 DB_USER=root docker compose up -d
+  ```
 
 ---
 
 ### วิธีที่ 2: รันแบบพัฒนาในเครื่อง (Local Development)
 
-#### 1. เปิดเซิร์ฟเวอร์ Backend (FastAPI + MySQL)
+#### 1. เปิดเซิร์ฟเวอร์ Backend (FastAPI)
 ```bash
 cd backend
 python3 -m venv venv
@@ -83,22 +146,25 @@ python3 -m http.server 3000
 
 ```
 web_app_dab/
-├── docker-compose.yml          # ไฟล์ตั้งค่า Docker (MySQL 8.0 + FastAPI Server)
+├── docker-compose.yml          # ไฟล์ตั้งค่า Docker (PostgreSQL 15, MySQL 8.0, phpMyAdmin, FastAPI)
 ├── README.md                   # เอกสารอธิบายโปรเจกต์
 ├── backend/                    # Python FastAPI Backend Services
 │   ├── Dockerfile              # Dockerfile สำหรับสร้าง Backend Image
-│   ├── requirements.txt        # Python dependencies
+│   ├── requirements.txt        # Python dependencies ( FastApi, SQLAlchemy, psycopg2, pymysql )
 │   ├── app/
 │   │   ├── main.py             # FastAPI entrypoint & CORS middleware
 │   │   ├── config.py           # DB Environment settings
-│   │   ├── database.py         # SQLAlchemy engine & session maker
+│   │   ├── database.py         # Dynamic SQLAlchemy engine for MySQL & PostgreSQL
 │   │   ├── models.py           # SQLAlchemy User & Score Models
 │   │   ├── auth.py             # Bcrypt hashing & JWT Token Manager
 │   │   └── routers/
-│   │       ├── auth.py         # API Endpoints: /api/auth/login, /api/auth/register
-│   │       └── scores.py       # API Endpoints: /api/scores/top, /api/scores/leaderboards
+│   │       ├── auth.py         # APIs: register, login, logout, change-password, check-username, me
+│   │       ├── users.py        # APIs: paginated users list, user by ID, update user, delete user
+│   │       ├── admin.py        # Admin panel management APIs
+│   │       └── scores.py       # APIs: high scores & leaderboards
 │   └── database/
 │       ├── schema.sql          # โครงสร้างตาราง MySQL Database
+│       ├── schema_postgres.sql # โครงสร้างตาราง PostgreSQL Database
 │       └── seed.sql            # ข้อมูลทดสอบเริ่มต้น
 └── frontend/                   # HTML/CSS/JavaScript Web Client
     ├── index.html              # หน้าแรก + Preload AI + Top 5 Leaderboards
@@ -120,6 +186,6 @@ web_app_dab/
 ## เทคโนโลยีที่ใช้ (Tech Stack)
 
 - **Frontend:** HTML5, CSS3 (Vanilla Dark-Mode Glassmorphism), Modern JavaScript (ES Modules), Google MediaPipe Pose Landmarker (`@mediapipe/tasks-vision`)
-- **Backend:** Python 3.11+, FastAPI, SQLAlchemy, PyMySQL, Bcrypt, Python-Jose (JWT)
-- **Database:** MySQL 8.0 Database Server
+- **Backend:** Python 3.11+, FastAPI, SQLAlchemy, PyMySQL, Psycopg2, Bcrypt, Python-Jose (JWT)
+- **Databases:** PostgreSQL 15, MySQL 8.0 (with phpMyAdmin Web Admin)
 - **DevOps & Containerization:** Docker, Docker Compose
