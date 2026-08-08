@@ -1,18 +1,59 @@
 services:
-  db:
-    image: mysql:8.0
-    container_name: dance_detector_db
+  # --------------------------------------------------------
+  # 1. PostgreSQL Database Service
+  # --------------------------------------------------------
+  db_postgres:
+    image: postgres:15-alpine
+    container_name: dance_detector_postgres
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: root
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: rootpassword
+      POSTGRES_DB: dance_detector
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./backend/database/schema_postgres.sql:/docker-entrypoint-initdb.d/01_schema.sql
+
+  # --------------------------------------------------------
+  # 2. MySQL Database Service (for phpMyAdmin)
+  # --------------------------------------------------------
+  db_mysql:
+    image: mysql:8.0
+    container_name: dance_detector_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
       MYSQL_DATABASE: dance_detector
     ports:
       - "3306:3306"
     volumes:
-      - db_data:/var/lib/mysql
+      - mysql_data:/var/lib/mysql
       - ./backend/database/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
       - ./backend/database/seed.sql:/docker-entrypoint-initdb.d/02_seed.sql
 
+  # --------------------------------------------------------
+  # 3. phpMyAdmin Web Interface (Access at http://localhost:8080)
+  # --------------------------------------------------------
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: dance_detector_phpmyadmin
+    restart: always
+    environment:
+      PMA_HOST: db_mysql
+      PMA_PORT: 3306
+      PMA_USER: root
+      PMA_PASSWORD: rootpassword
+    ports:
+      - "8080:80"
+    depends_on:
+      - db_mysql
+
+  # --------------------------------------------------------
+  # 4. FastAPI Web Backend Service
+  # Switch DB_TYPE between 'postgres' and 'mysql'
+  # --------------------------------------------------------
   web:
     build:
       context: ./backend
@@ -22,15 +63,28 @@ services:
     ports:
       - "8000:8000"
     environment:
-      DB_HOST: db
-      DB_USER: root
-      DB_PASSWORD: root
-      DB_PORT: 3306
+      # Options: 'postgres' or 'mysql'
+      DB_TYPE: ${DB_TYPE:-postgres}
+      
+      # PostgreSQL Connection Params (when DB_TYPE=postgres)
+      # DB_HOST: db_postgres
+      # DB_PORT: 5432
+      # DB_USER: postgres
+      # DB_PASSWORD: rootpassword
+      # DB_NAME: dance_detector
+      
+      # Default to db_postgres container
+      DB_HOST: db_postgres
+      DB_USER: postgres
+      DB_PASSWORD: rootpassword
+      DB_PORT: 5432
       DB_NAME: dance_detector
     depends_on:
-      - db
+      - db_postgres
+      - db_mysql
     volumes:
       - ./frontend:/frontend
 
 volumes:
-  db_data:
+  pg_data:
+  mysql_data:

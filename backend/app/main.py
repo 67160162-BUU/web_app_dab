@@ -7,14 +7,17 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 from app.database import engine, Base
 import app.models
-from app.routers import scores, auth, admin, share
+from app.routers import scores, auth, admin, share, users
 
-# Auto-create tables & auto-add pose_key column if missing in MySQL
+# Auto-create tables if missing
 try:
     Base.metadata.create_all(bind=engine)
     with engine.connect() as conn:
-        conn.execute(text("ALTER TABLE scores ADD COLUMN pose_key VARCHAR(50) NOT NULL DEFAULT 'dab';"))
-        conn.commit()
+        try:
+            conn.execute(text("ALTER TABLE scores ADD COLUMN pose_key VARCHAR(50) NOT NULL DEFAULT 'dab';"))
+            conn.commit()
+        except Exception:
+            pass
 except Exception:
     pass
 
@@ -31,6 +34,7 @@ app.add_middleware(
 # API Routers
 app.include_router(scores.router, prefix="/api/scores", tags=["scores"])
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
+app.include_router(users.router, prefix="/api/users", tags=["users"])
 app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
 app.include_router(share.router, prefix="/api/share", tags=["share"])
 
