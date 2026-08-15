@@ -77,7 +77,21 @@ docker compose up --build -d
 ```
 
 - เข้าใช้งานเว็บเกมที่: `http://localhost:8000`
+- เข้าใช้งานระบบผู้ดูแลระบบ (Admin Dashboard) ที่: `http://localhost:8000/pages/admin.html`
 - เข้าใช้งาน phpMyAdmin บริหารจัดการ MySQL ที่: `http://localhost:8080`
+
+---
+
+### 🔑 ข้อมูลบัญชีผู้ใช้สำหรับทดสอบ (Test Accounts)
+
+| ประเภทบัญชี | Username | Email | Password | บทบาท (Role) | การเข้าถึง |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Admin** (ผู้ดูแลระบบ) | `admin` | `admin@dancedetector.com` | `adminpassword123` | `admin` | จัดการผู้ใช้, แก้ไข Role, ลบคะแนนผิดปกติ |
+| **Player** (ผู้เล่นตัวอย่าง) | `player1` | `player1@gmail.com` | `adminpassword123` | `player` | เล่นเกม, สะสมคะแนน, แก้ไขโปรไฟล์ |
+
+> 💡 **หมายเหตุ:** สามารถล็อกอินโดยใช้ `Username` หรือ `Email` ก็ได้ และสามารถกดสมัครสมาชิกใหม่ด้วยตนเองผ่านหน้าเว็บได้ทันที
+
+---
 
 #### การสลับฐานข้อมูลระหว่าง PostgreSQL (ส่งงาน) และ MySQL (phpMyAdmin):
 

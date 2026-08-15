@@ -1,7 +1,12 @@
 // รวมการเรียก backend ทุกเส้นทางไว้ที่เดียว (Auth, Scores, Admin, Share)
-const BASE = (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") && window.location.port !== "8000")
-  ? "http://localhost:8000/api"
-  : "/api";
+const BASE = (() => {
+  if (typeof window === "undefined") return "http://localhost:8000/api";
+  // If running directly on backend (port 8000) or behind a standard proxy (port 80/443)
+  if (window.location.port === "8000" || window.location.port === "") return "/api";
+  // If running on a separate frontend dev server (e.g. port 3000, 5500)
+  return `${window.location.protocol}//${window.location.hostname}:8000/api`;
+})();
+
 
 function getLocalScores() {
   const data = localStorage.getItem("dd_local_scores");
@@ -223,9 +228,13 @@ export async function fetchAdminUsers() {
   const res = await fetch(`${BASE}/admin/users`, {
     headers: getAuthHeaders(),
   });
-  if (!res.ok) throw new Error("ไม่สามารถโหลดรายชื่อผู้ใช้ได้ (ต้องใช้สิทธิ์ Admin)");
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "ไม่สามารถโหลดรายชื่อผู้ใช้ได้ (ต้องใช้สิทธิ์ Admin)");
+  }
   return res.json();
 }
+
 
 export async function updateAdminUserRole(userId, newRole) {
   const res = await fetch(`${BASE}/admin/users/${userId}/role`, {

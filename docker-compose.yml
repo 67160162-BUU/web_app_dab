@@ -11,10 +11,15 @@ services:
       POSTGRES_PASSWORD: rootpassword
       POSTGRES_DB: dance_detector
     ports:
-      - "5432:5432"
+      - "${PG_PORT:-5432}:5432"
     volumes:
       - pg_data:/var/lib/postgresql/data
-      - ./backend/database/schema_postgres.sql:/docker-entrypoint-initdb.d/01_schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d dance_detector"]
+      interval: 3s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
 
   # --------------------------------------------------------
   # 2. MySQL Database Service (for phpMyAdmin)
@@ -27,11 +32,15 @@ services:
       MYSQL_ROOT_PASSWORD: rootpassword
       MYSQL_DATABASE: dance_detector
     ports:
-      - "3306:3306"
+      - "${MYSQL_PORT:-3306}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./backend/database/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
-      - ./backend/database/seed.sql:/docker-entrypoint-initdb.d/02_seed.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
+      interval: 3s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
 
   # --------------------------------------------------------
   # 3. phpMyAdmin Web Interface (Access at http://localhost:8080)
@@ -46,9 +55,10 @@ services:
       PMA_USER: root
       PMA_PASSWORD: rootpassword
     ports:
-      - "8080:80"
+      - "${PMA_PORT:-8080}:80"
     depends_on:
-      - db_mysql
+      db_mysql:
+        condition: service_healthy
 
   # --------------------------------------------------------
   # 4. FastAPI Web Backend Service
@@ -56,35 +66,29 @@ services:
   # --------------------------------------------------------
   web:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend/Dockerfile
     container_name: dance_detector_web
     restart: always
     ports:
-      - "8000:8000"
+      - "${APP_PORT:-8000}:8000"
     environment:
-      # Options: 'postgres' or 'mysql'
+      # Options: 'postgres' (default) or 'mysql'
       DB_TYPE: ${DB_TYPE:-postgres}
-      
-      # PostgreSQL Connection Params (when DB_TYPE=postgres)
-      # DB_HOST: db_postgres
-      # DB_PORT: 5432
-      # DB_USER: postgres
-      # DB_PASSWORD: rootpassword
-      # DB_NAME: dance_detector
-      
-      # Default to db_postgres container
-      DB_HOST: db_postgres
-      DB_USER: postgres
-      DB_PASSWORD: rootpassword
-      DB_PORT: 5432
-      DB_NAME: dance_detector
+      DB_HOST: ${DB_HOST:-}
+      DB_PORT: ${DB_PORT:-}
+      DB_USER: ${DB_USER:-}
+      DB_PASSWORD: ${DB_PASSWORD:-rootpassword}
+      DB_NAME: ${DB_NAME:-dance_detector}
+      IS_DOCKER: "true"
     depends_on:
-      - db_postgres
-      - db_mysql
-    volumes:
-      - ./frontend:/frontend
+      db_postgres:
+        condition: service_healthy
+      db_mysql:
+        condition: service_healthy
 
 volumes:
   pg_data:
   mysql_data:
+
+

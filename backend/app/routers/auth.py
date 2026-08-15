@@ -87,15 +87,29 @@ def register(req: RegisterRequest, db: Session = Depends(get_db)):
     access_token = create_access_token(data={"sub": user.id, "role": str(user.role)})
     return TokenResponse(access_token=access_token, user=UserResponse.from_orm(user))
 
+from sqlalchemy import or_
+
 @router.post("/login", response_model=TokenResponse)
 def login(req: LoginRequest, db: Session = Depends(get_db)):
-    """เข้าสู่ระบบด้วย Username & Password"""
-    user = db.query(User).filter(User.username == req.username).first()
+    """เข้าสู่ระบบด้วย Username & Password หรือ Email"""
+    clean_username = req.username.strip().lower()
+    raw_username = req.username.strip()
+
+    user = db.query(User).filter(
+        or_(
+            User.username == clean_username,
+            User.username == raw_username,
+            User.email == clean_username,
+            User.email == raw_username
+        )
+    ).first()
+
     if not user or not user.password_hash or not verify_password(req.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid username or password")
 
     access_token = create_access_token(data={"sub": user.id, "role": str(user.role)})
     return TokenResponse(access_token=access_token, user=UserResponse.from_orm(user))
+
 
 @router.post("/logout")
 def logout(current_user: Optional[User] = Depends(get_current_user)):

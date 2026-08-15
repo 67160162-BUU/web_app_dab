@@ -13,11 +13,11 @@ DELETE FROM `users`;
 
 -- Insert Admin User
 INSERT INTO `users` (`id`, `username`, `email`, `password_hash`, `display_name`, `role`, `is_guest`, `created_at`) VALUES
-(1, 'admin', 'admin@dancedetector.com', '$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeg6Lruj3vjPGga31lW', 'Admin Manager', 'admin', 0, NOW());
+(1, 'admin', 'admin@dancedetector.com', '$2b$12$tpR6hHLGOhWzpNmPixNoMey2KaHpgcRJnFUvzr6DiGhO1O/fxPi8a', 'Admin Manager', 'admin', 0, NOW());
 
 -- Insert Sample Players
 INSERT INTO `users` (`id`, `username`, `email`, `password_hash`, `display_name`, `role`, `is_guest`, `created_at`) VALUES
-(2, 'player1', 'player1@gmail.com', '$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeg6Lruj3vjPGga31lW', 'ProDabber99', 'player', 0, NOW()),
+(2, 'player1', 'player1@gmail.com', '$2b$12$tpR6hHLGOhWzpNmPixNoMey2KaHpgcRJnFUvzr6DiGhO1O/fxPi8a', 'ProDabber99', 'player', 0, NOW()),
 (3, NULL, NULL, NULL, 'TestDabPro', 'player', 1, NOW()),
 (4, NULL, NULL, NULL, 'TestSixSevenStar', 'player', 1, NOW()),
 (5, NULL, NULL, NULL, 'TestScubaChamp', 'player', 1, NOW());

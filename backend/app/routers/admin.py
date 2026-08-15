@@ -39,9 +39,9 @@ def list_users(
             "username": u.username,
             "email": u.email,
             "display_name": u.display_name,
-            "role": u.role.value,
+            "role": str(u.role.value if hasattr(u.role, 'value') else u.role),
             "is_guest": u.is_guest,
-            "created_at": u.created_at.strftime("%Y-%m-%d %H:%M:%S")
+            "created_at": u.created_at.strftime("%Y-%m-%d %H:%M:%S") if u.created_at else ""
         })
     return output
 
@@ -60,7 +60,7 @@ def update_user_role(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    user.role = UserRole(req.role)
+    user.role = req.role
     db.commit()
     return {"message": "Role updated successfully", "user_id": user_id, "new_role": req.role}
 
